@@ -1,4 +1,4 @@
-const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited';
+const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited'
 let prevDOM = null
 let selectingDOM = false
 let selectedElements = []
@@ -18,7 +18,7 @@ const getTopTermsInDoc = () => {
 
 const initSelectedElements = () => {
   // get fetch existing selectedElements
-  chrome.storage.local.get(['selectedElements'], function(result) {
+  chrome.storage.local.get(['selectedElements'], function (result) {
     console.log('result.selectedElements', result.selectedElements)
 
     selectedElements = result.selectedElements || []
@@ -36,7 +36,7 @@ const unstyleSelectedElements = () => {
   if (selectedElements.length > 0) {
     selectedElements.forEach(el => {
       // console.log('el in selectedElements', el)
-      el.classList.remove(MOUSE_VISITED_CLASSNAME);
+      el.classList.remove(MOUSE_VISITED_CLASSNAME)
     })
   }
 }
@@ -45,7 +45,7 @@ const styleSelectedElements = () => {
   if (selectedElements.length > 0) {
     selectedElements.forEach(el => {
       // console.log('el in selectedElements', el)
-      el.classList.add(MOUSE_VISITED_CLASSNAME);
+      el.classList.add(MOUSE_VISITED_CLASSNAME)
     })
   }
 }
@@ -61,10 +61,10 @@ const slackFields = () => {
     if (selector.length === 0) return null
 
     const sender = selector.find('.c-message__sender').text()
-    const link = selector.find('a.c-link.c-timestamp')[0]['href']
-    const text = selector.find('.p-rich_text_block').text() 
+    const link = selector.find('a.c-link.c-timestamp')[0].href
+    const text = selector.find('.p-rich_text_block').text()
 
-    return({
+    return ({
       sender_name: sender,
       message_link: link,
       message_text: text
@@ -76,9 +76,9 @@ const slackFields = () => {
 
 const redditSelectedFields = () => {
   const comments = selectedElements.map(el => {
-    let selector = $(el)
+    const selector = $(el)
 
-    let comment = {}
+    const comment = {}
 
     const commentBody = $(el).find('div[data-test-id="comment"]')
     if (commentBody.length === 0) return null
@@ -86,7 +86,7 @@ const redditSelectedFields = () => {
 
     const timestamp = $(el).find('[id^=CommentTopMeta--Created--]')
     if (timestamp.length > 0) {
-      comment.url = timestamp[0]['href']
+      comment.url = timestamp[0].href
     }
 
     return comment
@@ -97,13 +97,13 @@ const redditSelectedFields = () => {
 
 // parse '(hh):mm:ss' string into seconds
 const timeStringToSeconds = (str) => {
-  return str.split(':').reverse().reduce((prev, curr, i) => prev + curr*Math.pow(60, i), 0)
+  return str.split(':').reverse().reduce((prev, curr, i) => prev + curr * Math.pow(60, i), 0)
 }
 
 const youtubeFields = () => {
   const currentTime = $('.ytp-time-current')[0].innerText
   const channelName = $('.ytd-channel-name yt-formatted-string')[0].innerText
-  const channelUrl = $('.ytd-channel-name yt-formatted-string a')[0]['href']
+  const channelUrl = $('.ytd-channel-name yt-formatted-string a')[0].href
   const publishedDate = $('#date yt-formatted-string.ytd-video-primary-info-renderer')[0].innerText.replace('Premiered ', '') // FIXME - this can break for other languages
 
   return ({
@@ -117,12 +117,12 @@ const youtubeFields = () => {
 const linkedinLearningFields = () => {
   const classTitle = $('.classroom-nav__details h1').text()
   const currentTime = $('.vjs-current-time').text()
-  const teacherName = $('.authors-entity__name-text').text().trim().split("\n")[0]
+  const teacherName = $('.authors-entity__name-text').text().trim().split('\n')[0]
   const teacherUrl = $('a.course-author-entity__lockup').attr('href')
   const sessionTitle = $('.classroom-toc-item--selected').text()
   const sessionTranscript = $('.transcripts-component__sections').text().trim()
 
-  return({
+  return ({
     class_title: classTitle.trim(),
     current_time: currentTime,
     teacher_name: teacherName.trim(),
@@ -139,7 +139,7 @@ const skillShareFields = () => {
   const teacherUrl = $('.class-details-header-teacher-link').attr('href')
   const sessionTitle = $('.session-item.active .session-item-title').text()
 
-  return({
+  return ({
     class_title: classTitle.trim(),
     current_time: currentTime,
     teacher_name: teacherName.trim(),
@@ -153,7 +153,7 @@ const netflixFields = () => {
   const episodeTitle = $('.video-title span').text()
   const currentTime = $('.scrubber-head').attr('aria-valuetext')
 
-  return({
+  return ({
     video_title: videoTitle,
     episode_title: episodeTitle,
     current_time: currentTime
@@ -164,13 +164,13 @@ const edxLectureFields = () => {
   const provider = $('.course-header .provider').text()
   const courseCode = $('.course-header .course-number').text()
   const courseName = $('.course-header .course-name').text()
-       
-  const videoUrl = $('.video-sources').length > 0 ? $('.video-sources').get(0)['href'] : null
-  const slidesUrl = $('a[href$=pdf]').length > 0 ? $('a[href$=pdf]').get(0)['href'] : null
+
+  const videoUrl = $('.video-sources').length > 0 ? $('.video-sources').get(0).href : null
+  const slidesUrl = $('a[href$=pdf]').length > 0 ? $('a[href$=pdf]').get(0).href : null
 
   const vidTime = $('.vidtime').length > 0 ? $('.vidtime').text().split('/')[0].trim() : null
 
-  return({
+  return ({
     course_provider: provider,
     course_code: courseCode,
     course_name: courseName,
@@ -227,7 +227,7 @@ const parseSelectedElements = () => {
 }
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
+  function (request, sender, sendResponse) {
     // console.log(request.message);
 
     // if (request.disconnect === true) {
@@ -239,39 +239,37 @@ chrome.runtime.onMessage.addListener(
 
     if (request.hasStoragePermission === true) {
       hasStoragePermission = true
-      sendResponse({ack: true})
+      sendResponse({ ack: true })
     }
 
     if (request.clearSelection === true) {
       clearSelection()
-      sendResponse({ack: true})
+      sendResponse({ ack: true })
     }
 
-    if (request.message === "clicked_browser_action") {
+    if (request.message === 'clicked_browser_action') {
       const sel = window.getSelection()
       const selectionText = sel.toString()
 
       // console.log('selectionText', selectionText)
-      
+
       let titleOverride = null
       let urlOverride = null
-      let customFields = {} 
+      let customFields = {}
       let closestId = ''
-      
+
       if (sel && sel.rangeCount > 0) {
         const selectionEl = sel.getRangeAt(0).startContainer.parentNode
 
         if (selectionEl.id) {
           closestId = selectionEl.id
-        }
-        else {
-          const prevSibling = $(selectionEl).prev('[id]')        
+        } else {
+          const prevSibling = $(selectionEl).prev('[id]')
           const prevParent = $(selectionEl).closest('[id]')
 
           if (prevSibling.length > 0) {
             closestId = prevSibling[0].id
-          }
-          else if (prevParent.length > 0) {
+          } else if (prevParent.length > 0) {
             closestId = prevParent[0].id
           }
         }
@@ -284,17 +282,15 @@ chrome.runtime.onMessage.addListener(
       // Index the DOM
       getTopTermsInDoc()
 
-
       // Youtube video
       if (isYoutubeVideoPage()) {
         const fields = youtubeFields()
         Object.assign(customFields, fields)
-      
+
         // TODO - replace an existing t parameter
         if (location.search.includes('t=')) {
           urlOverride = `${location.origin}${location.pathname}${location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
-        }
-        else {
+        } else {
           urlOverride = `${location.href}&t=${timeStringToSeconds(fields.current_time)}`
         }
       }
@@ -317,7 +313,6 @@ chrome.runtime.onMessage.addListener(
         Object.assign(customFields, fields)
       }
 
-
       // Kindle Cloud reader
       if (isKindleCloudReaderPage()) {
 
@@ -335,12 +330,11 @@ chrome.runtime.onMessage.addListener(
 
       // if (isMedium)
       // Kindle Notes and Highlights: https://read.amazon.com/notebook
-      // Go to the first book 
+      // Go to the first book
       // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
       // document in the first kindle iframe
       // $('#KindleReaderIFrame').get(0).contentDocument
       if (isKindleNotebookPage()) {
-
         console.log('is kindle notebook page!')
 
         titleOverride = $('h3').text()
@@ -356,16 +350,14 @@ chrome.runtime.onMessage.addListener(
           if (selectionEl.classList.contains('a-row')) {
             currRow = selectionEl
             // closestId = selectionEl.id
-          }
-          else {
-            const prevSibling = $(selectionEl).prev('.a-row')        
+          } else {
+            const prevSibling = $(selectionEl).prev('.a-row')
             const prevParent = $(selectionEl).closest('.a-row')
 
             if (prevSibling.length > 0) {
               // closestId = prevSibling[0].id
               currRow = prevSibling
-            }
-            else if (prevParent.length > 0) {
+            } else if (prevParent.length > 0) {
               // closestId = prevParent[0].id
               currRow = prevParent
             }
@@ -375,67 +367,63 @@ chrome.runtime.onMessage.addListener(
           const prevRow = $(selectionEl).closest('.kp-notebook-row-separator')
           console.log('prevRow', prevRow)
 
-
           customFields.book_location = prevRow.find('#annotationHighlightHeader')[0].innerText
-
         }
       }
 
-
       if (selectedElements.length > 0) {
-        
         const selectedFields = parseSelectedElements()
 
         customFields = {
-          ...customFields, 
-          ...selectedFields 
+          ...customFields,
+          ...selectedFields
         }
       }
 
-      const pageContext = { 
-        pageContext: { 
+      const pageContext = {
+        pageContext: {
           urlOverride: urlOverride,
           titleOverride: titleOverride,
-          selection: selectionText, 
+          selection: selectionText,
           // closestId: closestId,
           // page_dom: document.documentElement.outerHTML,
           customFields: customFields
         }
-      };
+      }
 
       // console.log('sending pageContext', pageContext, window.getSelection().toString())
 
-      chrome.runtime.sendMessage(pageContext, function(response) {
-      });
+      chrome.runtime.sendMessage(pageContext, function (response) {
+      })
     }
 
     if (request.addSelection) {
       selectingDOM = true
 
       console.log('in addSelection in content script')
-      sendResponse({ack: true})
+      sendResponse({ ack: true })
 
-      $(document).mousemove(function(e) {
-        var target = e.target;
+      $(document).mousemove(function (e) {
+        var target = e.target
 
         // console.log('target', target)
-        const whiteListedNodes = ['DIV', 'IMG', 'A', 'P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5'] 
+        const whiteListedNodes = ['DIV', 'IMG', 'A', 'P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5']
 
         // if (whiteListedClasses && target.class)
-        // TODO - perhaps we should restrict what elements can be added? 
+        // TODO - perhaps we should restrict what elements can be added?
         // do it by source
 
         if (whiteListedNodes.includes(target.nodeName)) {
           // For NPE checking, we check safely. We need to remove the class name
           // Since we will be styling the new one after.
           if (prevDOM != null && !selectedElements.includes(prevDOM)) {
-            prevDOM.classList.remove(MOUSE_VISITED_CLASSNAME);
+            prevDOM.classList.remove(MOUSE_VISITED_CLASSNAME)
           }
           // Add a visited class name to the element. So we can style it.
-          target.classList.add(MOUSE_VISITED_CLASSNAME);
+          target.classList.add(MOUSE_VISITED_CLASSNAME)
           // The current element is now the previous. So we can remove the class
           // during the next iteration.
-          prevDOM = target;
+          prevDOM = target
         }
       })
     }
@@ -445,19 +433,18 @@ chrome.runtime.onMessage.addListener(
       $(document).unbind('mousemove')
     }
   }
-);
+)
 
-
-$(function() {
-  $(document).click(function(e) {
+$(function () {
+  $(document).click(function (e) {
     if (selectingDOM) {
       if (hasStoragePermission) {
-        let element = e.target
+        const element = e.target
 
         if (selectedElements && selectedElements.includes(element.outerHTML)) return
 
         selectedElements.push(element)
       }
     }
-  }) 
+  })
 })

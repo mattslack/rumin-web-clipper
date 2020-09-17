@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react'
 import { ClickHandler } from './ClickHandler'
 
 export const CollectionsDropdown = (props) => {
@@ -8,7 +8,7 @@ export const CollectionsDropdown = (props) => {
   const [prevSpaceSuggestions, setPrevSpaceSuggestions] = useState([])
   const [hasStoragePermission, setHasStoragePermission] = useState(false)
   const [queryTimer, setQueryTimer] = useState(null)
-	
+
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
   const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState(false)
   const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false)
@@ -40,8 +40,8 @@ export const CollectionsDropdown = (props) => {
   }, [])
 
   const uniqueSuggestions = (suggestions) => {
-    let results = []
-    let seen = {}
+    const results = []
+    const seen = {}
     suggestions.forEach(s => {
       if (seen[s.id] === true) {
         return
@@ -87,48 +87,47 @@ export const CollectionsDropdown = (props) => {
 
     setHasFetchedSuggestions(false)
     setIsFetchingSuggestions(true)
-    
+
     fetch(`https://getrumin.com/api/v1/search/?q=${query}&content_type=Space&lite=true`, {
       method: 'GET',
       headers: {
         'Content-type': 'application/json'
       }
     })
-    .then(res => {
-      if (!res.ok) throw new Error(res.status)
-      else return res.json()
-    })
-    .then(data => {
-      setShowSuggestionsDropdown(true)
-      setSpaceSuggestions(data.results)
+      .then(res => {
+        if (!res.ok) throw new Error(res.status)
+        else return res.json()
+      })
+      .then(data => {
+        setShowSuggestionsDropdown(true)
+        setSpaceSuggestions(data.results)
 
-      setIsFetchingSuggestions(false)
-      setHasFetchedSuggestions(true)
+        setIsFetchingSuggestions(false)
+        setHasFetchedSuggestions(true)
 
-      // cache the response
-      // if (hasStoragePermission) {
-      //   chrome.storage.local.get(['prevSpaceSuggestions'], result => {
-      //     const cachedResults = result.prevSpaceSuggestions || []
-          
+        // cache the response
+        // if (hasStoragePermission) {
+        //   chrome.storage.local.get(['prevSpaceSuggestions'], result => {
+        //     const cachedResults = result.prevSpaceSuggestions || []
+
       //     const suggestionsToCache = uniqueSuggestions([...cachedResults.slice(0, 100), ...data.results])
       //     chrome.storage.local.set({ prevSpaceSuggestions: suggestionsToCache })
       //   })
       // }
-    })
-    .catch(error => {
-      console.log('error: ' + error)
-    })
+      })
+      .catch(error => {
+        console.log('error: ' + error)
+      })
   }
 
   const handleInputFocus = () => {
-
     // if there is no query, use previously selected spaces
     if (query.length === 0 && prevSelectedSpaces.length > 0) {
       setShowSuggestionsDropdown(true)
 
       const suggestions = prevSelectedSpaces.slice(0, 20).filter(s => {
         return !selectedSpaces.map(ss => ss.id).includes(s.id)
-      }) 
+      })
       // console.log('in handleInputFocus', suggestions, spaceSuggestions.map(ss => ss.id), prevSelectedSpaces)
 
       setSpaceSuggestions(suggestions)
@@ -141,7 +140,7 @@ export const CollectionsDropdown = (props) => {
 
   const handleQueryKeyDown = (e) => {
     if (e.key === 'Backspace' && query.length === 0) {
-      handleRemoveToken(selectedSpaces[selectedSpaces.length-1])
+      handleRemoveToken(selectedSpaces[selectedSpaces.length - 1])
     }
 
     if (e.key === 'Escape') {
@@ -160,65 +159,65 @@ export const CollectionsDropdown = (props) => {
       title: query
     }
 
-    fetch(`https://getrumin.com/api/v1/spaces/`, {
+    fetch('https://getrumin.com/api/v1/spaces/', {
       method: 'POST',
       headers: {
         'Content-type': 'application/json'
       },
       body: JSON.stringify(body)
     })
-    .then(res => {
-      if (!res.ok) throw new Error(res.status)
-      else return res.json()
-    })
-    .then(space => {
+      .then(res => {
+        if (!res.ok) throw new Error(res.status)
+        else return res.json()
+      })
+      .then(space => {
       // success
-      const updatedSelection = [...selectedSpaces, space]
-      updateSelectedSpaces(updatedSelection)
-      setQuery('')
-    })
-    .catch(error => {
-      console.log('error: ' + error)
-    }) 
+        const updatedSelection = [...selectedSpaces, space]
+        updateSelectedSpaces(updatedSelection)
+        setQuery('')
+      })
+      .catch(error => {
+        console.log('error: ' + error)
+      })
   }
 
   const buildResults = () => {
     // console.log(query.length, hasFetchedSuggestions, spaceSuggestions.length, spaceSuggestions)
 
     if (query.length > 0 && hasFetchedSuggestions && spaceSuggestions.length === 0) {
-      return(
-        <div 
-          className="as-msg gray-text"
+      return (
+        <div
+          className='as-msg gray-text'
         >
           No matching results
         </div>
       )
-    } 
+    }
 
     // if (query.length < 2) return ''
     return spaceSuggestions.map(space => {
-      return(
-        <SuggestionResult 
+      return (
+        <SuggestionResult
           key={`suggestion_${space.id}`}
           space={space}
-          handleSuggestionClick={handleSuggestionClick} 
+          handleSuggestionClick={handleSuggestionClick}
         />
-      );
-    });
+      )
+    })
   }
 
   const buildSelectedTokens = () => {
     return selectedSpaces.map(space => {
-      return(
-        <div className="token">
-        	<span>
-	          { space.title } 
-	        </span>
-          <div 
-            className="remove-btn"
+      return (
+        <div className='token'>
+          <span>
+            {space.title}
+          </span>
+          <div
+            className='remove-btn'
             onClick={() => handleRemoveToken(space)}
           >
-            <svg viewBox="0 0 8 8" className="closeThick" style={{width: '8px', height: '8px', display: 'block', fill: 'inherit', flexShrink: 0, backfaceVisibility: 'hidden', opacity: 0.5}}><polygon points="8 1.01818182 6.98181818 0 4 2.98181818 1.01818182 0 0 1.01818182 2.98181818 4 0 6.98181818 1.01818182 8 4 5.01818182 6.98181818 8 8 6.98181818 5.01818182 4"></polygon></svg>
+            <svg viewBox='0 0 8 8' className='closeThick' style={{ width: '8px', height: '8px', display: 'block', fill: 'inherit', flexShrink: 0, backfaceVisibility: 'hidden', opacity: 0.5 }}><polygon points='8 1.01818182 6.98181818 0 4 2.98181818 1.01818182 0 0 1.01818182 2.98181818 4 0 6.98181818 1.01818182 8 4 5.01818182 6.98181818 8 8 6.98181818 5.01818182 4' /></svg>
           </div>
         </div>
       )
@@ -228,9 +227,9 @@ export const CollectionsDropdown = (props) => {
   const buildFetchingMoreMsg = () => {
     if (!isFetchingSuggestions) return ''
 
-    return(
-      <div 
-        className="as-msg gray-text"
+    return (
+      <div
+        className='as-msg gray-text'
       >
         fetching more results...
       </div>
@@ -241,17 +240,17 @@ export const CollectionsDropdown = (props) => {
     if (!showSuggestionsDropdown) return ''
     // if (!showSuggestionsDropdown || spaceSuggestions.length < 1) return ''
 
-    return(
+    return (
       <ClickHandler
         close={() => setShowSuggestionsDropdown(false)}
       >
-      	<div className="collections-dropdown">
-  	      <div className="section results" style={{borderBottom: '1px solid #ccc'}}>
-  	        { buildCreateCollection() }
-  	        { buildResults() }
-            { buildFetchingMoreMsg() }
-  	      </div>
-  	    </div>
+        <div className='collections-dropdown'>
+          <div className='section results' style={{ borderBottom: '1px solid #ccc' }}>
+            {buildCreateCollection()}
+            {buildResults()}
+            {buildFetchingMoreMsg()}
+          </div>
+        </div>
       </ClickHandler>
     )
   }
@@ -259,40 +258,40 @@ export const CollectionsDropdown = (props) => {
   const buildCreateCollection = () => {
     if (query.length < 1) return ''
 
-    return(
-      <div 
-        role="button"
-        className="as-result"
+    return (
+      <div
+        role='button'
+        className='as-result'
         onClick={handleNewSpaceClick}
       >
-        + New page "{ query }"
+        + New page "{query}"
       </div>
     )
   }
 
-  return(
-  	<div className="collections-dropdown-container">
-      <div className="field-label"><i className="fa fa-tags small-icon"></i> Add to collections</div>
+  return (
+    <div className='collections-dropdown-container'>
+      <div className='field-label'><i className='fa fa-tags small-icon' /> Add to collections</div>
 
-      <div className="collections-selected">
-        { buildSelectedTokens() }
+      <div className='collections-selected'>
+        {buildSelectedTokens()}
 
-        <div className="collections-search-container">
-          <input 
-            className="collections-search" 
-            placeholder="Type to search collections" 
+        <div className='collections-search-container'>
+          <input
+            className='collections-search'
+            placeholder='Type to search collections'
             value={query}
             onFocus={handleInputFocus}
-            onChange={handleQueryChange} 
+            onChange={handleQueryChange}
             onKeyDown={handleQueryKeyDown}
             onKeyUp={handleQueryKeyUp}
           />
         </div>
       </div>
-      
-	    { buildASResultsSection() }
+
+      {buildASResultsSection()}
     </div>
-  );
+  )
 }
 
 const SuggestionResult = (props) => {
@@ -300,24 +299,24 @@ const SuggestionResult = (props) => {
     props.handleSuggestionClick(props.space)
   }
 
-  return(
-    <div 
-      className="as-result"
+  return (
+    <div
+      className='as-result'
       onClick={handleClick}
     >
-      { props.space.title }
+      {props.space.title}
     </div>
   )
 }
 
 const SuggestedLinkToken = (props) => {
-  return(
-    <div className="token">
-      { props.space.title }
-      <div 
-        className="remove-btn"
+  return (
+    <div className='token'>
+      {props.space.title}
+      <div
+        className='remove-btn'
       >
-        <svg viewBox="0 0 8 8" className="closeThick" style={{width: '8px', height: '8px', display: 'block', fill: '#ffffff', flexShrink: 0, backfaceVisibility: 'hidden', opacity: 0.5}}><polygon points="8 1.01818182 6.98181818 0 4 2.98181818 1.01818182 0 0 1.01818182 2.98181818 4 0 6.98181818 1.01818182 8 4 5.01818182 6.98181818 8 8 6.98181818 5.01818182 4"></polygon></svg>
+        <svg viewBox='0 0 8 8' className='closeThick' style={{ width: '8px', height: '8px', display: 'block', fill: '#ffffff', flexShrink: 0, backfaceVisibility: 'hidden', opacity: 0.5 }}><polygon points='8 1.01818182 6.98181818 0 4 2.98181818 1.01818182 0 0 1.01818182 2.98181818 4 0 6.98181818 1.01818182 8 4 5.01818182 6.98181818 8 8 6.98181818 5.01818182 4' /></svg>
       </div>
     </div>
   )
