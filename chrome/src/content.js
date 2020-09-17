@@ -1,3 +1,4 @@
+/* global $, TinyTFIDF, chrome */
 const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited'
 let prevDOM = null
 let selectingDOM = false
@@ -76,7 +77,6 @@ const slackFields = () => {
 
 const redditSelectedFields = () => {
   const comments = selectedElements.map(el => {
-    const selector = $(el)
 
     const comment = {}
 
@@ -181,39 +181,39 @@ const edxLectureFields = () => {
 }
 
 const isLinkedinLearningPage = () => {
-  return location.href.startsWith('https://www.linkedin.com/learning/') && $('.classroom-layout__content').length > 0
+  return window.location.href.startsWith('https://www.linkedin.com/learning/') && $('.classroom-layout__content').length > 0
 }
 
 const isSkillshareVideoPage = () => {
-  return location.href.startsWith('https://www.skillshare.com/classes/')
+  return window.location.href.startsWith('https://www.skillshare.com/classes/')
 }
 
 const isNetflixVideoPage = () => {
-  return location.href.startsWith('https://www.netflix.com/watch/')
+  return window.location.href.startsWith('https://www.netflix.com/watch/')
 }
 
 const isYoutubeVideoPage = () => {
-  return location.href.startsWith('https://www.youtube.com/watch?v=')
+  return window.location.href.startsWith('https://www.youtube.com/watch?v=')
 }
 
 const isKindleCloudReaderPage = () => {
-  return location.href.startsWith('https://read.amazon.com') && !location.href.includes('notebook')
+  return window.location.href.startsWith('https://read.amazon.com') && !window.location.href.includes('notebook')
 }
 
 const isKindleNotebookPage = () => {
-  return location.href.startsWith('https://read.amazon.com/notebook')
+  return window.location.href.startsWith('https://read.amazon.com/notebook')
 }
 
 const isSlackPage = () => {
-  return location.href.startsWith('https://app.slack.com/client/')
+  return window.location.href.startsWith('https://app.slack.com/client/')
 }
 
 const isRedditPage = () => {
-  return location.href.includes('reddit.com/r/') && location.href.includes('comments')
+  return window.location.href.includes('reddit.com/r/') && window.location.href.includes('comments')
 }
 
 const isEdxLecturePage = () => {
-  return location.href.startsWith('https://courses.edx.org/courses/') && location.href.includes('courseware')
+  return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
 }
 
 const parseSelectedElements = () => {
@@ -275,7 +275,7 @@ chrome.runtime.onMessage.addListener(
         }
 
         if (closestId) {
-          urlOverride = `${location.href}#${closestId}`
+          urlOverride = `${window.location.href}#${closestId}`
         }
       }
 
@@ -288,10 +288,10 @@ chrome.runtime.onMessage.addListener(
         Object.assign(customFields, fields)
 
         // TODO - replace an existing t parameter
-        if (location.search.includes('t=')) {
-          urlOverride = `${location.origin}${location.pathname}${location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
+        if (window.location.search.includes('t=')) {
+          urlOverride = `${window.location.origin}${window.location.pathname}${window.location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
         } else {
-          urlOverride = `${location.href}&t=${timeStringToSeconds(fields.current_time)}`
+          urlOverride = `${window.location.href}&t=${timeStringToSeconds(fields.current_time)}`
         }
       }
 

@@ -8,7 +8,6 @@ const App = (props) => {
       <CollectionsDropdown />
     </div>
   )
-  // }
 }
 
 // export default App

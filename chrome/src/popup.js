@@ -1,20 +1,20 @@
+/* global $, chrome */
 (function () {
   let favIconUrl
   let title
   let pageUrl
   let selection
   let note
-  let page_dom
   let hasStoragePermission = false
   let searchQuery = ''
   let customFields = {}
 
   function delay (fn, ms) {
-	  let timer = 0
-	  return function (...args) {
-	    clearTimeout(timer)
-	    timer = setTimeout(fn.bind(this, ...args), ms || 0)
-	  }
+    let timer = 0
+    return function (...args) {
+      clearTimeout(timer)
+      timer = setTimeout(fn.bind(this, ...args), ms || 0)
+    }
   }
 
   function escapeHtml (unsafe) {
@@ -102,7 +102,7 @@
         <div class="captured-selection ${activity.selection ? '' : 'hidden'}">
           <em>
             <div>
-            	${activity.selection}
+              ${activity.selection}
             </div>
           </em>
         </div>
@@ -114,8 +114,8 @@
   }
 
   function buildSpace (space) {
-  	return (`
-  		<div class="list-item">
+    return (`
+      <div class="list-item">
         <div class="title">
           <a href="https://getrumin.com/spaces/${space.id}" target="_blank">${space.title} <i class="fa fa-external-link" style="margin-left: 0.5em; font-size: 0.8em;"></i></a>
         </div>
@@ -123,10 +123,10 @@
           created ${new Date(space.created_at).toISOString().slice(0, 10)}&nbsp;&nbsp;&nbsp;&nbsp;last updated ${new Date(space.created_at).toISOString().slice(0, 10)}
         </div>
         <div class="text-body">
-        	<div>${space.text_body.length > 500 ? space.text_body.slice(0, 500) + '...' : space.text_body}</div>
+          <div>${space.text_body.length > 500 ? space.text_body.slice(0, 500) + '...' : space.text_body}</div>
         </div>
       </div>
-  	`)
+    `)
   }
 
   function buildCustomField (name, value) {
@@ -149,8 +149,8 @@
       contentType: 'application/json',
       success: function (data) {
         if (data.length === 0) {
-        	$('#search_results').html('<div style="width: 100%; text-align: center">No matching results on this page</div>')
-        	return
+          $('#search_results').html('<div style="width: 100%; text-align: center">No matching results on this page</div>')
+          return
         }
 
         const resultElements = data.map(obj => {
@@ -266,9 +266,6 @@
   })
 
   $(function () {
-    var noteSelectionStart
-    var noteSelectionEnd
-
     chrome.permissions.contains({
       permissions: ['storage']
     }, function (result) {
@@ -352,7 +349,6 @@
         // console.log(noteSelectionStart, noteSelectionEnd)
 
         var cursorStart = e.target.selectionStart
-        var cursorEnd = e.target.selectionEnd
         var value = e.target.value
 
         e.target.value = value.slice(0, cursorStart) + '}' + value.slice(cursorStart)
@@ -362,23 +358,23 @@
 
     // fetch search results
     $('#search_box').keyup(delay(function (e) {
-    	searchQuery = e.target.value
-    	$('#search_results').html('<div style="width: 100%; text-align: center">fetching...</div>')
+      searchQuery = e.target.value
+      $('#search_results').html('<div style="width: 100%; text-align: center">fetching...</div>')
 
-    	$.ajax({
+      $.ajax({
         url: `https://getrumin.com/api/v1/search?q=${searchQuery}&is_as=true/`,
         method: 'GET',
         contentType: 'application/json',
         success: function (data) {
-        	const resultsElements = data.results.map(obj => {
-        		if (obj.content_type === 'Activity') {
-        			return buildActivity(obj)
-        		} else {
-        			return buildSpace(obj)
-        		}
-        	}).join('')
+          const resultsElements = data.results.map(obj => {
+            if (obj.content_type === 'Activity') {
+              return buildActivity(obj)
+            } else {
+              return buildSpace(obj)
+            }
+          }).join('')
 
-        	$('#search_results').html(`<div class="heading">Results for ${searchQuery}</div>${resultsElements}`)
+          $('#search_results').html(`<div class="heading">Results for ${searchQuery}</div>${resultsElements}`)
         },
         error: function (error) {
           console.log('API error', error)
