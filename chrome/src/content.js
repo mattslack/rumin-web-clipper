@@ -17,15 +17,6 @@ const getTopTermsInDoc = () => {
   return corpus.getTopTermsForDocument('doc1').slice(0, 15)
 }
 
-const initSelectedElements = () => {
-  // get fetch existing selectedElements
-  chrome.storage.local.get(['selectedElements'], function (result) {
-    console.log('result.selectedElements', result.selectedElements)
-
-    selectedElements = result.selectedElements || []
-  })
-}
-
 const clearSelection = () => {
   unstyleSelectedElements()
 
@@ -38,15 +29,6 @@ const unstyleSelectedElements = () => {
     selectedElements.forEach(el => {
       // console.log('el in selectedElements', el)
       el.classList.remove(MOUSE_VISITED_CLASSNAME)
-    })
-  }
-}
-
-const styleSelectedElements = () => {
-  if (selectedElements.length > 0) {
-    selectedElements.forEach(el => {
-      // console.log('el in selectedElements', el)
-      el.classList.add(MOUSE_VISITED_CLASSNAME)
     })
   }
 }
