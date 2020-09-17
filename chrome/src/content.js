@@ -77,7 +77,6 @@ const slackFields = () => {
 
 const redditSelectedFields = () => {
   const comments = selectedElements.map(el => {
-
     const comment = {}
 
     const commentBody = $(el).find('div[data-test-id="comment"]')
@@ -180,6 +179,25 @@ const edxLectureFields = () => {
   })
 }
 
+const pinterestPinFields = () => {
+  let description = document.querySelector('.richPinInformation span')
+  if (description) description = description.textContent
+  let image = document.querySelector('div[data-test-id="closeup-image"] img + div img')
+  if (image) image = image.src
+  let pinnedBy = document.querySelector('.pinActivityContainer svg title, .pinActivityContainer img')
+  if (pinnedBy) {
+    pinnedBy = pinnedBy.alt || pinnedBy.textContent
+  }
+  let pinnedFrom = document.querySelector('a.linkModuleActionButton')
+  if (pinnedFrom) pinnedFrom = pinnedFrom.href
+  return ({
+    description: description,
+    image: image,
+    pinnedBy: pinnedBy,
+    pinnedFrom: pinnedFrom
+  })
+}
+
 const isLinkedinLearningPage = () => {
   return window.location.href.startsWith('https://www.linkedin.com/learning/') && $('.classroom-layout__content').length > 0
 }
@@ -214,6 +232,10 @@ const isRedditPage = () => {
 
 const isEdxLecturePage = () => {
   return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
+}
+
+const isPinterestPage = () => {
+  return /pinterest.com$/.test(window.location.hostname) && /^\/pin\//.test(window.location.pathname)
 }
 
 const parseSelectedElements = () => {
@@ -315,7 +337,12 @@ chrome.runtime.onMessage.addListener(
 
       // Kindle Cloud reader
       if (isKindleCloudReaderPage()) {
+      }
 
+      // Pinterest Pin
+      if (isPinterestPage()) {
+        Object.assign(customFields, pinterestPinFields())
+        titleOverride = document.querySelector('h1').textContent || null
       }
 
       // Page title
