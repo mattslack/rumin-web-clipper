@@ -311,7 +311,7 @@
 
     $('#custom_fields_heading').click(function () {
       $('.custom-fields-content').toggleClass('hidden')
-      $('#custom_fields_display_icon').toggleClass('hidden')
+      $('.custom_fields_display_icon').toggleClass('hidden')
     })
 
     $('#screenshot_btn').click(function () {
