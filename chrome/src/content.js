@@ -1,4 +1,4 @@
-/* global $, TinyTFIDF, chrome */
+/* global $, Image, TinyTFIDF, chrome */
 const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited'
 let prevDOM = null
 let selectingDOM = false
@@ -30,6 +30,27 @@ const unstyleSelectedElements = () => {
       // console.log('el in selectedElements', el)
       el.classList.remove(MOUSE_VISITED_CLASSNAME)
     })
+  }
+}
+
+const imageToDataURL = (src, callback, outputFormat) => {
+  const img = new Image()
+  img.crossOrigin = 'Anonymous'
+  img.onload = (event) => {
+    const loadedImage = event.currentTarget
+    const canvas = document.createElement('CANVAS')
+    const ctx = canvas.getContext('2d')
+    let dataURL = ''
+    canvas.height = loadedImage.naturalHeight
+    canvas.width = loadedImage.naturalWidth
+    ctx.drawImage(loadedImage, 0, 0)
+    dataURL = canvas.toDataURL(outputFormat)
+    callback(dataURL)
+  }
+  img.src = src
+  if (img.complete || img.complete === undefined) {
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
+    img.src = src
   }
 }
 
@@ -164,8 +185,16 @@ const edxLectureFields = () => {
 const pinterestPinFields = () => {
   let description = document.querySelector('.richPinInformation span')
   if (description) description = description.textContent
-  let image = document.querySelector('div[data-test-id="closeup-image"] img + div img')
-  if (image) image = image.src
+  let image = null
+  let imageURL = document.querySelector('div[data-test-id="closeup-image"] img + div img')
+  if (imageURL) {
+    imageURL = imageURL.src
+    // This is currently useless
+    imageToDataURL(imageURL, (dataURL) => {
+      image = new Image()
+      image.src = dataURL
+    })
+  }
   let pinnedBy = document.querySelector('.pinActivityContainer svg title, .pinActivityContainer img')
   if (pinnedBy) {
     pinnedBy = pinnedBy.alt || pinnedBy.textContent
@@ -174,7 +203,7 @@ const pinterestPinFields = () => {
   if (pinnedFrom) pinnedFrom = pinnedFrom.href
   return ({
     description: description,
-    image: image,
+    imageURL: imageURL,
     pinnedBy: pinnedBy,
     pinnedFrom: pinnedFrom
   })
