@@ -1,4 +1,4 @@
-/* global $, chrome */
+/* global File, FormData, $, chrome, fetch */
 (function () {
   let favIconUrl
   let title
@@ -6,76 +6,75 @@
   let selection
   let note
   let hasStoragePermission = false
-  let searchQuery = ''
+  // let searchQuery = ''
   let customFields = {}
 
-  function delay (fn, ms) {
-    let timer = 0
-    return function (...args) {
-      clearTimeout(timer)
-      timer = setTimeout(fn.bind(this, ...args), ms || 0)
-    }
-  }
+  // function delay (fn, ms) {
+  //   let timer = 0
+  //   return function (...args) {
+  //     clearTimeout(timer)
+  //     timer = setTimeout(fn.bind(this, ...args), ms || 0)
+  //   }
+  // }
 
-  function escapeHtml (unsafe) {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-  }
+  // function escapeHtml (unsafe) {
+  //   return unsafe
+  //     .replace(/&/g, '&amp;')
+  //     .replace(/</g, '&lt;')
+  //     .replace(/>/g, '&gt;')
+  //     .replace(/"/g, '&quot;')
+  //     .replace(/'/g, '&#039;')
+  // }
 
-  const serializeHTML = (node) => {
-    if (typeof node.text === 'string') {
-      return escapeHtml(node.text)
-    }
+  // const serializeHTML = (node) => {
+  //   if (typeof node.text === 'string') {
+  //     return escapeHtml(node.text)
+  //   }
 
-    const children = node.children.map(n => serializeHTML(n)).join('')
+  //   const children = node.children.map(n => serializeHTML(n)).join('')
 
-    let url
-    if (node.url) {
-      if (node.url.startsWith('/spaces/') || node.url.startsWith('/activities/')) {
-        url = `https://getrumin.com${node.url}`
-      } else {
-        url = node.url
-      }
-    }
+  //   let url
+  //   if (node.url) {
+  //     if (node.url.startsWith('/spaces/') || node.url.startsWith('/activities/')) {
+  //       url = `https://getrumin.com${node.url}`
+  //     } else {
+  //       url = node.url
+  //     }
+  //   }
 
-    switch (node.type) {
-      case 'quote':
-        return `<blockquote><p>${children}</p></blockquote>`
-      case 'paragraph':
-        return `<p>${children}</p>`
-      case 'link':
-        return `<a href="${escapeHtml(url)}" target="_blank">${children}</a>`
-      case 'list-item':
-        return `<li>${children}</li>`
-      case 'heading-one':
-        return `<h1>${children}</h1>`
-      case 'heading-two':
-        return `<h2>${children}</h2>`
-      case 'heading-three':
-        return `<h3>${children}</h3>`
-      default:
-        return children
-    }
-  }
+  //   switch (node.type) {
+  //     case 'quote':
+  //       return `<blockquote><p>${children}</p></blockquote>`
+  //     case 'paragraph':
+  //       return `<p>${children}</p>`
+  //     case 'link':
+  //       return `<a href="${escapeHtml(url)}" target="_blank">${children}</a>`
+  //     case 'list-item':
+  //       return `<li>${children}</li>`
+  //     case 'heading-one':
+  //       return `<h1>${children}</h1>`
+  //     case 'heading-two':
+  //       return `<h2>${children}</h2>`
+  //     case 'heading-three':
+  //       return `<h3>${children}</h3>`
+  //     default:
+  //       return children
+  //   }
+  // }
 
   function activityData () {
     title = $('#captured_title_field').val()
     note = $('#captured_note_field').val()
 
-    const params = {
+    const params = Object.assign({}, {
       title: title,
       url: pageUrl,
       selection: selection,
       favicon_url: favIconUrl,
       note: note || '',
       // page_dom: page_dom,
-      screenshot: $('#screenshot_img').attr('src'),
-      custom_fields: customFields
-    }
+      screenshot: $('#screenshot_img').attr('src')
+    }, customFields)
 
     if (window.selectedSpaces) {
       params.in_collections = window.selectedSpaces
@@ -84,50 +83,50 @@
     return params
   }
 
-  function buildActivity (activity) {
-    let youtubeString = ''
-    if (activity.url && activity.url.startsWith('https://www.youtube.com') && activity.custom_fields && activity.custom_fields.current_time) {
-      youtubeString = `<div class="custom-field">Video at ${activity.custom_fields.current_time}</div>`
-    }
+  // function buildActivity (activity) {
+  //   let youtubeString = ''
+  //   if (activity.url && activity.url.startsWith('https://www.youtube.com') && activity.custom_fields && activity.custom_fields.current_time) {
+  //     youtubeString = `<div class="custom-field">Video at ${activity.custom_fields.current_time}</div>`
+  //   }
 
-    return (`
-      <div class="list-item">
-        <div class="title">
-          <a href="https://getrumin.com/activities/${activity.id}" target="_blank">${activity.title}<i class="fa fa-external-link" style="margin-left: 0.5em; font-size: 0.8em;"></i></a>
-        </div>
-        <div class="timestamp">
-          created ${new Date(activity.created_at).toISOString().slice(0, 10)}&nbsp;&nbsp;&nbsp;&nbsp;last updated ${new Date(activity.updated_at).toISOString().slice(0, 10)}
-        </div>
-        ${youtubeString}
-        <div class="captured-selection ${activity.selection ? '' : 'hidden'}">
-          <em>
-            <div>
-              ${activity.selection}
-            </div>
-          </em>
-        </div>
-        <div class="text-body">
-          <div>${serializeHTML({ children: activity.json_body })}</div>
-        </div>
-      </div>
-    `)
-  }
+  //   return (`
+  //     <div class="list-item">
+  //       <div class="title">
+  //         <a href="https://getrumin.com/activities/${activity.id}" target="_blank">${activity.title}<i class="fa fa-external-link" style="margin-left: 0.5em; font-size: 0.8em;"></i></a>
+  //       </div>
+  //       <div class="timestamp">
+  //         created ${new Date(activity.created_at).toISOString().slice(0, 10)}&nbsp;&nbsp;&nbsp;&nbsp;last updated ${new Date(activity.updated_at).toISOString().slice(0, 10)}
+  //       </div>
+  //       ${youtubeString}
+  //       <div class="captured-selection ${activity.selection ? '' : 'hidden'}">
+  //         <em>
+  //           <div>
+  //             ${activity.selection}
+  //           </div>
+  //         </em>
+  //       </div>
+  //       <div class="text-body">
+  //         <div>${serializeHTML({ children: activity.json_body })}</div>
+  //       </div>
+  //     </div>
+  //   `)
+  // }
 
-  function buildSpace (space) {
-    return (`
-      <div class="list-item">
-        <div class="title">
-          <a href="https://getrumin.com/spaces/${space.id}" target="_blank">${space.title} <i class="fa fa-external-link" style="margin-left: 0.5em; font-size: 0.8em;"></i></a>
-        </div>
-        <div class="timestamp">
-          created ${new Date(space.created_at).toISOString().slice(0, 10)}&nbsp;&nbsp;&nbsp;&nbsp;last updated ${new Date(space.created_at).toISOString().slice(0, 10)}
-        </div>
-        <div class="text-body">
-          <div>${space.text_body.length > 500 ? space.text_body.slice(0, 500) + '...' : space.text_body}</div>
-        </div>
-      </div>
-    `)
-  }
+  // function buildSpace (space) {
+  //   return (`
+  //     <div class="list-item">
+  //       <div class="title">
+  //         <a href="https://getrumin.com/spaces/${space.id}" target="_blank">${space.title} <i class="fa fa-external-link" style="margin-left: 0.5em; font-size: 0.8em;"></i></a>
+  //       </div>
+  //       <div class="timestamp">
+  //         created ${new Date(space.created_at).toISOString().slice(0, 10)}&nbsp;&nbsp;&nbsp;&nbsp;last updated ${new Date(space.created_at).toISOString().slice(0, 10)}
+  //       </div>
+  //       <div class="text-body">
+  //         <div>${space.text_body.length > 500 ? space.text_body.slice(0, 500) + '...' : space.text_body}</div>
+  //       </div>
+  //     </div>
+  //   `)
+  // }
 
   function buildCustomField (name, value) {
     if (typeof value === 'object') {
@@ -143,32 +142,32 @@
   }
 
   function fetchMatchingPages () {
-    $.ajax({
-      url: `https://getrumin.com/api/v1/search/?url=${encodeURIComponent(encodeURIComponent(pageUrl))}`,
-      method: 'GET',
-      contentType: 'application/json',
-      success: function (data) {
-        if (data.length === 0) {
-          $('#search_results').html('<div style="width: 100%; text-align: center">No matching results on this page</div>')
-          return
-        }
+    // $.ajax({
+    //   url: `https://getrumin.com/api/v1/search/?url=${encodeURIComponent(encodeURIComponent(pageUrl))}`,
+    //   method: 'GET',
+    //   contentType: 'application/json',
+    //   success: function (data) {
+    //     if (data.length === 0) {
+    //       $('#search_results').html('<div style="width: 100%; text-align: center">No matching results on this page</div>')
+    //       return
+    //     }
 
-        const resultElements = data.map(obj => {
-          // console.log('obj', obj.content_type, obj.title, obj)
+    //     const resultElements = data.map(obj => {
+    //       // console.log('obj', obj.content_type, obj.title, obj)
 
-          if (obj.content_type === 'Activity') {
-            return buildActivity(obj)
-          } else {
-            return buildSpace(obj)
-          }
-        }).join('')
+    //       if (obj.content_type === 'Activity') {
+    //         return buildActivity(obj)
+    //       } else {
+    //         return buildSpace(obj)
+    //       }
+    //     }).join('')
 
-        $('#search_results').html(`<div class="heading">Related to this page</div>${resultElements}`)
-      },
-      error: function (error) {
-        console.log('API error', error)
-      }
-    })
+    //     $('#search_results').html(`<div class="heading">Related to this page</div>${resultElements}`)
+    //   },
+    //   error: function (error) {
+    //     console.log('API error', error)
+    //   }
+    // })
   }
 
   function sendMsgToContentScript (msg) {
@@ -290,23 +289,47 @@
         sendMsgToContentScript({ clearSelection: true })
       }
 
-      $.ajax({
-        url: 'https://getrumin.com/api/v1/activities/', // 'http://127.0.0.1:8000/api/v1/activities/',//'https://getrumin.com/api/v1/activities/',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(activityData()),
-        success: function (data) {
-          $('.capture-container').html(`
-            <p>The content is successfully saved.</p>
-            <div>
-              <a href="https://getrumin.com/activities/${data.id}" target="_blank">Go to page</a>
-            </div>
-          `)
-        },
-        error: function (error) {
-          console.log('API error', error)
-        }
+      const saveMe = (fd) => {
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          body: fd
+        })
+          .then((data) => {
+            document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+      }
+
+      const url = 'http://localhost:4000/api/clipboard'
+      const fd = new FormData()
+      const data = activityData()
+      Object.keys(data).forEach((key) => {
+        fd.append(key, data[key])
       })
+
+      if (fd.has('imageURL')) {
+        const filename = (new URL(fd.get('imageURL'))).pathname.split('/').slice(-1)[0]
+        fetch(fd.get('imageURL'))
+          .then(res => {
+            fd.append('contentType', res.headers.get('content-type'))
+            return res.blob()
+          })
+          .then(blob => {
+            const file = new File([blob], filename, {
+              type: fd.get('contentType')
+            })
+            fd.append('image', file, filename)
+            saveMe(fd)
+          })
+          .catch(error => console.error(error))
+      } else {
+        saveMe(fd)
+      }
     })
 
     $('#custom_fields_heading').click(function () {
@@ -357,30 +380,30 @@
     })
 
     // fetch search results
-    $('#search_box').keyup(delay(function (e) {
-      searchQuery = e.target.value
-      $('#search_results').html('<div style="width: 100%; text-align: center">fetching...</div>')
+    // $('#search_box').keyup(delay(function (e) {
+    //   searchQuery = e.target.value
+    //   $('#search_results').html('<div style="width: 100%; text-align: center">fetching...</div>')
 
-      $.ajax({
-        url: `https://getrumin.com/api/v1/search?q=${searchQuery}&is_as=true/`,
-        method: 'GET',
-        contentType: 'application/json',
-        success: function (data) {
-          const resultsElements = data.results.map(obj => {
-            if (obj.content_type === 'Activity') {
-              return buildActivity(obj)
-            } else {
-              return buildSpace(obj)
-            }
-          }).join('')
+    //   $.ajax({
+    //     url: `https://getrumin.com/api/v1/search?q=${searchQuery}&is_as=true/`,
+    //     method: 'GET',
+    //     contentType: 'application/json',
+    //     success: function (data) {
+    //       const resultsElements = data.results.map(obj => {
+    //         if (obj.content_type === 'Activity') {
+    //           return buildActivity(obj)
+    //         } else {
+    //           return buildSpace(obj)
+    //         }
+    //       }).join('')
 
-          $('#search_results').html(`<div class="heading">Results for ${searchQuery}</div>${resultsElements}`)
-        },
-        error: function (error) {
-          console.log('API error', error)
-        }
-      })
-    }, 500))
+    //       $('#search_results').html(`<div class="heading">Results for ${searchQuery}</div>${resultsElements}`)
+    //     },
+    //     error: function (error) {
+    //       console.log('API error', error)
+    //     }
+    //   })
+    // }, 500))
 
     // switching tabs
     $('#lookup_tab_btn').click(function (e) {
