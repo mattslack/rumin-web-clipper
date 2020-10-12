@@ -1,6 +1,6 @@
-/* global File, FormData, $, chrome, fetch */
+/* global $, FormData, chrome, fetch */
 (function () {
-  let favIconUrl
+  // let favIconUrl
   let title
   let pageUrl
   let selection
@@ -68,12 +68,12 @@
 
     const params = Object.assign({}, {
       title: title,
-      url: pageUrl,
-      selection: selection,
-      favicon_url: favIconUrl,
-      note: note || '',
+      source_url: pageUrl,
+      // selection: selection,
+      // favicon_url: favIconUrl,
+      notes: note || ''
       // page_dom: page_dom,
-      screenshot: $('#screenshot_img').attr('src')
+      // screenshot: $('#screenshot_img').attr('src')
     }, customFields)
 
     if (window.selectedSpaces) {
@@ -193,7 +193,7 @@
     }
 
     if (req.pageContext) {
-      favIconUrl = sender.tab.favIconUrl
+      // favIconUrl = sender.tab.favIconUrl
 
       // no saved title from local storage
       if (!title || (title && title.trim() === '')) {
@@ -288,14 +288,17 @@
         sendMsgToContentScript({ cancelSelection: true })
         sendMsgToContentScript({ clearSelection: true })
       }
+      const url = 'http://localhost:4000/api/clipboard'
+      const data = activityData()
 
-      const saveMe = (fd) => {
+      const saveMe = () => {
         fetch(url, {
           method: 'POST',
+          body: JSON.stringify(data),
           headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          body: fd
+            Authorization: `Bearer ${readCookie('access_token')}`,
+            'Content-Type': 'application/json'
+          }
         })
           .then((data) => {
             document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
@@ -305,31 +308,7 @@
           })
       }
 
-      const url = 'http://localhost:4000/api/clipboard'
-      const fd = new FormData()
-      const data = activityData()
-      Object.keys(data).forEach((key) => {
-        fd.append(key, data[key])
-      })
-
-      if (fd.has('imageURL')) {
-        const filename = (new URL(fd.get('imageURL'))).pathname.split('/').slice(-1)[0]
-        fetch(fd.get('imageURL'))
-          .then(res => {
-            fd.append('contentType', res.headers.get('content-type'))
-            return res.blob()
-          })
-          .then(blob => {
-            const file = new File([blob], filename, {
-              type: fd.get('contentType')
-            })
-            fd.append('image', file, filename)
-            saveMe(fd)
-          })
-          .catch(error => console.error(error))
-      } else {
-        saveMe(fd)
-      }
+      saveMe()
     })
 
     $('#custom_fields_heading').click(function () {
@@ -471,5 +450,29 @@
         }
       })
     })
+  })
+
+  const readCookie = (name) => {
+    const nameEQ = name + '='
+    const ca = document.cookie.split(';')
+    for (var c of ca) {
+      while (c.charAt(0) === ' ') c.cubstring(1, c.length)
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    }
+    return null
+  }
+
+  document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
+    event.preventDefault()
+    const fd = new FormData(event.currentTarget)
+    fetch(event.currentTarget.getAttribute('action'), {
+      method: 'POST',
+      body: fd
+    })
+      .then((res) => {
+        res.json().then(json => {
+          document.cookie = `access_token=${json.access_token};`
+        })
+      })
   })
 })()

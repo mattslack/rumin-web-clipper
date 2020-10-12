@@ -24,7 +24,7 @@
     </div>
     <div id="lookup_tab_btn"
          class="tab">
-      Lookup
+       Sign In
     </div>
   </div>
   <div id="save_tab"
@@ -51,9 +51,6 @@
              class="note-field form-control"
              placeholder="You can use braces {} to link to pages, e.g. {Economics}, {home page design}"></textarea>
       </div>
-      <div class="form-group">
-        <div id="add_to_collection"></div>
-      </div>
       <!-- Advanced section, for configuring fields -->
       <div id="custom_fields_section"
            class="hidden"
@@ -76,8 +73,7 @@
                style="display: inline-block; vertical-align: top;width: 16px;"></div>
         </div>
         <div id="custom_fields"
-             class="custom-fields-content hidden">
-          Properties box
+             class="custom-fields-content">
         </div>
       </div><!-- Custom selection for Slack -->
       <div id="add_slack_selection"
@@ -104,7 +100,9 @@
            class="btn btn-light form-control hidden"
            style="margin-bottom: 1em;">
         Cancel selection
-      </div><img id="screenshot_img"
+      </div>
+      <!--
+      <img id="screenshot_img"
            alt=""
            class="hidden">
       <div id="screenshot_btn"
@@ -115,6 +113,7 @@
              alt=""
              class="btn-icon"></span> <span>Add a screenshot</span>
       </div>
+      -->
     </div>
     <div class="save-btn-container">
       <div id="save_btn"
@@ -133,19 +132,17 @@
       [Save btn]
        -->
   </div>
-  <div id="lookup_tab"
-       class="section-container hidden">
-    <div class="search-box-container">
-      <input id="search_box"
-           class="search-box"
-           placeholder="Search your knowledge base">
-    </div>
-    <div id="search_results"
-         class="search-results">
-      <div style="text-align: center;width: 100%">
-        fetching...
-      </div>
-    </div>
+  <div id="lookup_tab" class="section-container hidden">
+    <form method="post" action="http://localhost:4000/api/token" id="sign-in-form">
+      <input type="hidden" name="grant_type" value="password">
+      <label for="email">Email</label><br>
+      <input type="email" autocomplete="email" id="email" name="username">
+      <br>
+      <label for="password">Password</label><br>
+      <input type="password" autocomplete="password" id="password" name="password">
+      <br>
+      <input type="submit" value="Sign In">
+    </form>
   </div>
   <script src="popup.js"></script>
   <script src="main.js"></script>

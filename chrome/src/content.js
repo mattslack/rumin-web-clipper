@@ -202,10 +202,13 @@ const pinterestPinFields = () => {
   let pinnedFrom = document.querySelector('a.linkModuleActionButton')
   if (pinnedFrom) pinnedFrom = pinnedFrom.href
   return ({
-    description: description,
-    imageURL: imageURL,
-    pinnedBy: pinnedBy,
-    pinnedFrom: pinnedFrom
+    notes: description,
+    url: imageURL,
+    topics: [
+      { topic: 'Pin URL', value: window.location.href },
+      { topic: 'Pinned By', value: pinnedBy },
+      { topic: 'Pin Source URL', value: pinnedFrom }
+    ]
   })
 }
 
