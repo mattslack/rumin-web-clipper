@@ -300,11 +300,17 @@
             'Content-Type': 'application/json'
           }
         })
-          .then((data) => {
-            document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+          .then((response) => {
+            if (response.status === 201) {
+              document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+            }
           })
           .catch((error) => {
-            console.error(error)
+            if (error.status === 401) {
+              document.querySelector('.save-btn-container').innerHTML = '<p>You need to Sign In first.</p>'
+            } else {
+              console.error(error)
+            }
           })
       }
 
