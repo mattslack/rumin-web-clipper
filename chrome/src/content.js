@@ -182,6 +182,33 @@ const edxLectureFields = () => {
   })
 }
 
+const archDailyFields = () => {
+  let description = document.querySelector('.afd-gal-description')
+  let url
+  if (window.location.pathname.split('/').length >= 3) {
+    const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
+    if (activeSlide) url = activeSlide.querySelector('img').dataset.largesrc
+    description = description === null ? '' : description.textContent.trim()
+  } else {
+    url = document.querySelector('.featured-image img').src
+  }
+  const specItems = document.querySelectorAll('.afd-specs__item')
+  const topics = []
+  for (const item of specItems) {
+    const key = item.querySelector('.afd-specs__key')
+    const value = item.querySelector('.afd-specs__value')
+    if (key && value) {
+      topics.push({ topic: key.textContent.trim().replace(/:$/, ''), value: value.textContent.trim() })
+    }
+  }
+
+  return ({
+    notes: description,
+    topics: topics,
+    url: url
+  })
+}
+
 const pinterestPinFields = () => {
   let description = document.querySelector('.richPinInformation span')
   if (description) description = description.textContent
@@ -246,6 +273,10 @@ const isRedditPage = () => {
 
 const isEdxLecturePage = () => {
   return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
+}
+
+const isArchDailyPage = () => {
+  return /archdaily.com$/.text(window.location.hostname) && /^\/\d+\//.test(window.location.pathname)
 }
 
 const isPinterestPage = () => {
@@ -351,6 +382,12 @@ chrome.runtime.onMessage.addListener(
 
       // Kindle Cloud reader
       if (isKindleCloudReaderPage()) {
+      }
+
+      // Arch Daily
+      if (isArchDailyPage) {
+        Object.assign(customFields, archDailyFields())
+        titleOverride = document.querySelector('h1').textContent || null
       }
 
       // Pinterest Pin
