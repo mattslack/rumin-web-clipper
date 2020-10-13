@@ -208,7 +208,15 @@ const archDailyFields = () => {
     }
   }
 
-  if (copyright) topics.push({ topic: 'Copyright Holder', value: /(©)(.*)/.exec(copyright.textContent)[2] })
+  if (copyright) {
+    copyright = copyright.textContent
+    const copyrightPattern = new RegExp('(©)(.*)', 'i')
+    const copyrightMatch = copyrightPattern.exec(copyright)
+    if (copyrightMatch && copyrightMatch.length >= 2) {
+      copyright = copyrightPattern.exec(copyright.textContent)[2]
+    }
+    topics.push({ topic: 'Copyright Holder', value: copyright })
+  }
   topics.push({ topic: 'ArchDaily URL', value: window.location.href })
 
   return ({
