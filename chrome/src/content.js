@@ -185,7 +185,8 @@ const edxLectureFields = () => {
 const archDailyFields = () => {
   let description = document.querySelector('.afd-gal-description')
   let url
-  if (window.location.pathname.split('/').length >= 3) {
+  const pathname = window.location.pathname.split('/').filter((segment) => segment.length > 0)
+  if (pathname.length >= 3) {
     const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
     if (activeSlide) url = activeSlide.querySelector('img').dataset.largesrc
     description = description === null ? '' : description.textContent.trim()
@@ -198,7 +199,7 @@ const archDailyFields = () => {
     const key = item.querySelector('.afd-specs__key')
     const value = item.querySelector('.afd-specs__value')
     if (key && value) {
-      topics.push({ topic: key.textContent.trim().replace(/:$/, ''), value: value.textContent.trim() })
+      topics.push({ topic: key.textContent.trim().replace(/:.*$/, ''), value: value.textContent.trim() })
     }
   }
 
@@ -514,7 +515,7 @@ chrome.runtime.onMessage.addListener(
 )
 
 $(function () {
-  $(document).click(function (e) {
+  document.addEventListener('click', (e) => {
     if (selectingDOM) {
       if (hasStoragePermission) {
         const element = e.target

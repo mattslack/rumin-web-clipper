@@ -9,6 +9,8 @@
   // let searchQuery = ''
   let customFields = {}
 
+  const apiHost = 'https://api.dreamhousedesign.com'
+
   const readCookie = (name) => {
     const nameEQ = name + '='
     const ca = document.cookie.split(';')
@@ -18,7 +20,6 @@
     }
     return null
   }
-
 
   // function delay (fn, ms) {
   //   let timer = 0
@@ -299,7 +300,7 @@
         sendMsgToContentScript({ cancelSelection: true })
         sendMsgToContentScript({ clearSelection: true })
       }
-      const url = 'http://localhost:4000/api/clipboard'
+      const url = `${apiHost}/api/clipboard`
       const data = activityData()
 
       const saveMe = () => {
@@ -318,7 +319,7 @@
           })
           .catch((error) => {
             if (error.status === 401) {
-              document.querySelector('.save-btn-container').innerHTML = '<p>You need to Sign In first.</p>'
+              document.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
             } else {
               console.error(error)
             }
@@ -402,28 +403,20 @@
     // }, 500))
 
     // switching tabs
-    const signInTab = document.querySelector('#lookup_tab')
     const signInTabBtn = document.querySelector('#lookup_tab_btn')
-    const saveTab = document.querySelector('#save_tab')
     const saveTabBtn = document.querySelector('#save_tab_btn')
 
-    const selectSignInTab = () => {
-      saveTabBtn.classList.remove('active')
-      signInTabBtn.classList.add('active')
-
-      saveTab.classList.add('hidden')
-      signInTab.classList.remove('hidden')
+    const selectTab = (e) => {
+      if (e.target.classList.contains('tab')) {
+        if (e.type) e.stopImmediatePropagation()
+        const tabs = Array.from(document.querySelectorAll('.tab'))
+        tabs.forEach((tab) => {
+          tab.classList.toggle('active', tab === e.target)
+          document.getElementById(tab.dataset.content).classList.toggle('hidden', tab !== e.target)
+        })
+      }
     }
-
-    signInTabBtn.addEventListener('click', selectSignInTab)
-
-    saveTabBtn.addEventListener('click', () => {
-      signInTabBtn.classList.remove('active')
-      saveTabBtn.classList.add('active')
-
-      signInTab.classList.add('hidden')
-      saveTab.classList.remove('hidden')
-    })
+    document.addEventListener('click', (e) => selectTab(e))
 
     // custom selection for Slack
     $('#add_slack_selection').click(function () {
@@ -476,22 +469,24 @@
     })
 
     if (readCookie('access_token') === null) {
-      selectSignInTab()
+      selectTab({ target: signInTabBtn })
       saveTabBtn.disabled = true
     }
-  })
 
-  document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
-    event.preventDefault()
-    const fd = new FormData(event.currentTarget)
-    fetch(event.currentTarget.getAttribute('action'), {
-      method: 'POST',
-      body: fd
-    })
-      .then((res) => {
-        res.json().then(json => {
-          document.cookie = `access_token=${json.access_token};`
-        })
+    document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
+      event.preventDefault()
+      const fd = new FormData(event.currentTarget)
+      fetch(event.currentTarget.getAttribute('action'), {
+        method: 'POST',
+        body: fd
       })
+        .then((res) => {
+          res.json().then(json => {
+            document.cookie = `access_token=${json.access_token};`
+            saveTabBtn.disabled = false
+            selectTab({ target: saveTabBtn })
+          })
+        })
+    })
   })
 })()
