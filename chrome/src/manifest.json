@@ -1,7 +1,7 @@
 {
-  "name": "Rumin",
+  "name": "Dream House",
   "version": "0.0.0.15",
-  "description": "The fastest way to collect information from diverse sources on the web - Rumin helps you capture any content instantly.",
+  "description": "",
   "permissions": ["activeTab"],
   "optional_permissions": ["storage"],
   "background": {
