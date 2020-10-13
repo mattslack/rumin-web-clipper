@@ -83,13 +83,8 @@ i.small-icon {
 }*/
 
 .save-btn-container {
-  background-color: white;
-  bottom: 0;
-  left: 0;
-  padding: 1em;
-  position: fixed;
-  right: 0;
-  width: 100%;
+  background-color: #fff;
+  padding-top: 1em;
 }
 
 .permission-bar {
@@ -114,10 +109,15 @@ i.small-icon {
 }
 
 .tabs .tab {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
   box-sizing: border-box;
   color: #777;
   cursor: pointer;
   display: inline-block;
+  height: auto;
   padding: 0.5em 0;
   text-align: center;
   width: 50%;
@@ -127,27 +127,26 @@ i.small-icon {
   background-color: #f0f0f0;
 }
 
+.tabs .tab:disabled {
+  cursor: not-allowed;
+}
 .tab.active {
   border-bottom: 2px solid #0f8bff;
 }
 
 .section-container,
 .capture-container {
+  padding: 1em;
   width: 350px;
 }
 
-.capture-container {
-  padding: 1em;
-}
 
 .captured-selection {
   background-color: #f9f9f9;
   font-size: 0.8em;
   margin-bottom: 1em;
-
   max-height: 200px;
   overflow-y: scroll;
-  padding: 1em;
 }
 
 .captured-selection::-webkit-scrollbar {

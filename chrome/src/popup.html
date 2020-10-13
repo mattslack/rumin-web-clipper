@@ -18,14 +18,14 @@
          target="_blank">Why?</a>
   </div>
   <div class="tabs">
-    <div id="save_tab_btn"
+    <button id="save_tab_btn"
          class="tab active">
       Save
-    </div>
-    <div id="lookup_tab_btn"
+    </button>
+    <button id="lookup_tab_btn"
          class="tab">
        Sign In
-    </div>
+    </button>
   </div>
   <div id="save_tab"
        class="capture-container">
@@ -134,14 +134,17 @@
   </div>
   <div id="lookup_tab" class="section-container hidden">
     <form method="post" action="http://localhost:4000/api/token" id="sign-in-form">
-      <input type="hidden" name="grant_type" value="password">
-      <label for="email">Email</label><br>
-      <input type="email" autocomplete="email" id="email" name="username">
-      <br>
-      <label for="password">Password</label><br>
-      <input type="password" autocomplete="password" id="password" name="password">
-      <br>
-      <input type="submit" value="Sign In">
+      <div class="form-group">
+        <input type="hidden" name="grant_type" value="password">
+        <label for="email">Email</label><br>
+        <input class="form-control" type="email" autocomplete="email" id="email" name="username">
+        <br>
+        <label for="password">Password</label><br>
+        <input class="form-control" type="password" autocomplete="password" id="password" name="password">
+      </div>
+      <div class="save-btn-container">
+        <input type="submit" value="Sign In">
+      </div>
     </form>
   </div>
   <script src="popup.js"></script>

@@ -9,6 +9,17 @@
   // let searchQuery = ''
   let customFields = {}
 
+  const readCookie = (name) => {
+    const nameEQ = name + '='
+    const ca = document.cookie.split(';')
+    for (var c of ca) {
+      while (c.charAt(0) === ' ') c.cubstring(1, c.length)
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    }
+    return null
+  }
+
+
   // function delay (fn, ms) {
   //   let timer = 0
   //   return function (...args) {
@@ -391,20 +402,27 @@
     // }, 500))
 
     // switching tabs
-    $('#lookup_tab_btn').click(function (e) {
-      $('#save_tab_btn').removeClass('active')
-      $('#lookup_tab_btn').addClass('active')
+    const signInTab = document.querySelector('#lookup_tab')
+    const signInTabBtn = document.querySelector('#lookup_tab_btn')
+    const saveTab = document.querySelector('#save_tab')
+    const saveTabBtn = document.querySelector('#save_tab_btn')
 
-      $('#save_tab').addClass('hidden')
-      $('#lookup_tab').removeClass('hidden')
-    })
+    const selectSignInTab = () => {
+      saveTabBtn.classList.remove('active')
+      signInTabBtn.classList.add('active')
 
-    $('#save_tab_btn').click(function (e) {
-      $('#lookup_tab_btn').removeClass('active')
-      $('#save_tab_btn').addClass('active')
+      saveTab.classList.add('hidden')
+      signInTab.classList.remove('hidden')
+    }
 
-      $('#lookup_tab').addClass('hidden')
-      $('#save_tab').removeClass('hidden')
+    signInTabBtn.addEventListener('click', selectSignInTab)
+
+    saveTabBtn.addEventListener('click', () => {
+      signInTabBtn.classList.remove('active')
+      saveTabBtn.classList.add('active')
+
+      signInTab.classList.add('hidden')
+      saveTab.classList.remove('hidden')
     })
 
     // custom selection for Slack
@@ -456,17 +474,12 @@
         }
       })
     })
-  })
 
-  const readCookie = (name) => {
-    const nameEQ = name + '='
-    const ca = document.cookie.split(';')
-    for (var c of ca) {
-      while (c.charAt(0) === ' ') c.cubstring(1, c.length)
-      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    if (readCookie('access_token') === null) {
+      selectSignInTab()
+      saveTabBtn.disabled = true
     }
-    return null
-  }
+  })
 
   document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
     event.preventDefault()
