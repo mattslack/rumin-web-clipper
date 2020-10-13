@@ -183,14 +183,19 @@ const edxLectureFields = () => {
 }
 
 const archDailyFields = () => {
+  let copyright
   let description = document.querySelector('.afd-gal-description')
   let url
   const pathname = window.location.pathname.split('/').filter((segment) => segment.length > 0)
   if (pathname.length >= 3) {
     const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
-    if (activeSlide) url = activeSlide.querySelector('img').dataset.largesrc
+    if (activeSlide) {
+      copyright = document.querySelector('.afd-gal-figcaption__link')
+      url = activeSlide.querySelector('img').dataset.largesrc
+    }
     description = description === null ? '' : description.textContent.trim()
   } else {
+    copyright = document.querySelector('.featured-image figcaption')
     url = document.querySelector('.featured-image img').src
   }
   const specItems = document.querySelectorAll('.afd-specs__item')
@@ -202,6 +207,8 @@ const archDailyFields = () => {
       topics.push({ topic: key.textContent.trim().replace(/:.*$/, ''), value: value.textContent.trim() })
     }
   }
+
+  if (copyright) topics.push({ topic: 'Copyright Holder', value: /(©)(.*)/.exec(copyright.textContent)[2] })
 
   return ({
     notes: description,
