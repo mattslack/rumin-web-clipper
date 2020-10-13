@@ -209,6 +209,7 @@ const archDailyFields = () => {
   }
 
   if (copyright) topics.push({ topic: 'Copyright Holder', value: /(©)(.*)/.exec(copyright.textContent)[2] })
+  topics.push({ topic: 'ArchDaily URL', value: window.location.href })
 
   return ({
     notes: description,
