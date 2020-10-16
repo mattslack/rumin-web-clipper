@@ -145,8 +145,6 @@ i.small-icon {
   background-color: #f9f9f9;
   font-size: 0.8em;
   margin-bottom: 1em;
-  max-height: 200px;
-  overflow-y: scroll;
 }
 
 .captured-selection::-webkit-scrollbar {
@@ -227,8 +225,6 @@ textarea.note-field {
 #custom_fields {
   /*overflow-wrap: break-word;*/
   color: #666;
-  max-height: 200px;
-  overflow-y: scroll;
 }
 
 #custom_fields::-webkit-scrollbar {

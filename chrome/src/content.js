@@ -213,7 +213,7 @@ const archDailyFields = () => {
     const copyrightPattern = new RegExp('(©)(.*)', 'i')
     const copyrightMatch = copyrightPattern.exec(copyright)
     if (copyrightMatch && copyrightMatch.length >= 2) {
-      copyright = copyrightPattern.exec(copyright.textContent)[2]
+      copyright = copyrightMatch[2]
     }
     topics.push({ topic: 'Copyright Holder', value: copyright })
   }

@@ -315,14 +315,14 @@
           .then((response) => {
             if (response.status === 201) {
               document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+            } else if (response.status === 401) {
+              document.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
+            } else {
+              document.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
             }
           })
           .catch((error) => {
-            if (error.status === 401) {
-              document.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
-            } else {
-              console.error(error)
-            }
+            document.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
           })
       }
 
@@ -486,6 +486,9 @@
             saveTabBtn.disabled = false
             selectTab({ target: saveTabBtn })
           })
+        })
+        .catch((error) => {
+          console.log(error)
         })
     })
   })
