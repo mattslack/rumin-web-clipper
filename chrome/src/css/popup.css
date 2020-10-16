@@ -75,7 +75,7 @@ i.small-icon {
 .capture-form-container {
   overflow: visible;
   overflow-y: scroll;
-  padding-bottom: 2em;
+  padding-bottom: 4.25rem;
 }
 
 /*.capture-form-container::-webkit-scrollbar {
@@ -84,7 +84,12 @@ i.small-icon {
 
 .save-btn-container {
   background-color: #fff;
+  bottom: 0;
+  left: 1em;
+  padding-bottom: 1em;
   padding-top: 1em;
+  position: fixed;
+  right: 1em;
 }
 
 .permission-bar {
