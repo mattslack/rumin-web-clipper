@@ -226,6 +226,39 @@ const archDailyFields = () => {
   })
 }
 
+const houzzFields = () => {
+  const topics = []
+  let notes = null
+  let url = null
+  let image = document.querySelector('img.view-photo-image-pane__image')
+  const description = document.querySelector('.hz-view-photo__space-info__description') || document.querySelector('.vp-redesign-description')
+  if (description) {
+    notes = description.textContent
+  }
+  if (image) {
+    url = image.src
+  } else {
+    image = document.querySelector('.hz-page-content-wrapper--viewProduct img.zoom-pane-image')
+    if (image && image.style.getPropertyValue('background-image')) {
+      url = image.style.getPropertyValue('background-image').replace(/^url\("/, '').replace(/"\)$/, '')
+    }
+  }
+  const productSpecs = document.querySelectorAll('dl .product-spec-item')
+  for (const spec of productSpecs) {
+    const key = spec.querySelector('dt')
+    const value = spec.querySelector('dd')
+    if (key && value) {
+      topics.push({ topic: key.textContent.trim(), value: value.textContent.trim() })
+    }
+  }
+  topics.push({ topic: 'Houzz URL', value: window.location.href })
+  return ({
+    notes: notes,
+    topics: topics,
+    url: url
+  })
+}
+
 const pinterestPinFields = () => {
   let description = document.querySelector('.richPinInformation span')
   if (description) description = description.textContent
@@ -293,7 +326,11 @@ const isEdxLecturePage = () => {
 }
 
 const isArchDailyPage = () => {
-  return /archdaily.com$/.text(window.location.hostname) && /^\/\d+\//.test(window.location.pathname)
+  return /archdaily.com$/.test(window.location.hostname) && /^\/\d+\//.test(window.location.pathname)
+}
+
+const isHouzzPage = () => {
+  return /houzz.com$/.test(window.location.hostname)
 }
 
 const isPinterestPage = () => {
@@ -402,9 +439,15 @@ chrome.runtime.onMessage.addListener(
       }
 
       // Arch Daily
-      if (isArchDailyPage) {
+      if (isArchDailyPage()) {
         Object.assign(customFields, archDailyFields())
         titleOverride = document.querySelector('h1').textContent || null
+      }
+
+      // Houzz Page
+      if (isHouzzPage()) {
+        Object.assign(customFields, houzzFields())
+        titleOverride = document.title || null
       }
 
       // Pinterest Pin
