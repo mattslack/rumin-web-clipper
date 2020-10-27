@@ -298,7 +298,7 @@
 
     $('#save_btn').click(function () {
       // disable button
-      $('#save_btn').html('<div style="width: 100%; text-align: center"><img src="images/spinner.gif" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
+      $('#save_btn').html('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
       $('#save_btn').removeClass()
 
       if (hasStoragePermission) {
