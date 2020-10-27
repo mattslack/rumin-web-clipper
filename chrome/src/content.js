@@ -326,7 +326,7 @@ const isEdxLecturePage = () => {
 }
 
 const isArchDailyPage = () => {
-  return /archdaily.com$/.test(window.location.hostname) && /^\/\d+\//.test(window.location.pathname)
+  return /archdaily.com(\.(br|cl|mx|cn))?$/.test(window.location.hostname) && /^\/((br|cl|mx|cn)\/)?\d+\//.test(window.location.pathname)
 }
 
 const isHouzzPage = () => {
