@@ -12,7 +12,7 @@
       "matches": [
         "*://*/*"
       ],
-      "js": ["vendor/jquery-3.4.1.min.js", "vendor/tiny-tfidf.js", "content.js"],
+      "js": ["vendor/jquery-3.4.1.min.js", "content.js"],
       "css": ["css/content.css"]
     }
   ],

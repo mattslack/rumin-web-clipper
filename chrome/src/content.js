@@ -1,4 +1,4 @@
-/* global $, TinyTFIDF, chrome */
+/* global $, chrome */
 const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited'
 let prevDOM = null
 let selectingDOM = false
@@ -11,11 +11,6 @@ let hasStoragePermission = false
 //   });
 //   o.observe(el)
 // }
-
-const getTopTermsInDoc = () => {
-  const corpus = new TinyTFIDF.Corpus(['doc1'], [$('body').text()])
-  return corpus.getTopTermsForDocument('doc1').slice(0, 15)
-}
 
 const clearSelection = () => {
   unstyleSelectedElements()
@@ -372,9 +367,6 @@ chrome.runtime.onMessage.addListener(
           urlOverride = `${window.location.href}#${closestId}`
         }
       }
-
-      // Index the DOM
-      getTopTermsInDoc()
 
       // Youtube video
       if (isYoutubeVideoPage()) {
