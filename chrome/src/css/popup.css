@@ -149,7 +149,8 @@ textarea.form-control {
   width: 100%;
 }
 
-.capture-form-container {
+.capture-form-container,
+.section-container .form-group {
   overflow: visible;
   overflow-y: scroll;
   padding-bottom: 4.25rem;
