@@ -4,7 +4,6 @@
   let title
   let pageUrl
   let selection
-  let note
   let hasStoragePermission = false
   // let searchQuery = ''
   let customFields = {}
@@ -76,14 +75,14 @@
 
   function activityData () {
     title = $('#captured_title_field').val()
-    note = $('#captured_note_field').val()
+    const notes = $('#captured_note_field').val()
 
     const params = Object.assign({}, {
       title: title,
       source_url: pageUrl,
       // selection: selection,
       // favicon_url: favIconUrl,
-      notes: note || ''
+      notes: notes || ''
       // page_dom: page_dom,
       // screenshot: $('#screenshot_img').attr('src')
     }, customFields)
@@ -238,6 +237,14 @@
 
         const divider = '<div class="divider"></div>'
 
+        console.log(customFields)
+        if (customFields.notes !== undefined) {
+          document.querySelector('#captured_note_field').value = customFields.notes
+          delete customFields.notes
+        }
+        if (customFields.page_title !== undefined && customFields.page_title === title) {
+          delete customFields.page_title
+        }
         const customFieldElements = Object.keys(customFields).map(fieldName => {
           return buildCustomField(fieldName, customFields[fieldName])
         }).join(divider)
