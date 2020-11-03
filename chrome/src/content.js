@@ -160,7 +160,7 @@ const archDailyFields = () => {
   let copyright
   let description = document.querySelector('.afd-gal-description')
   let url
-  const pathname = window.location.pathname.split('/').filter((segment, index) => {
+  const pathname = window.location.pathname.replace(/^\//, '').split('/').filter((segment, index) => {
     if (index === 0) return segment.length > 2
     return segment.length > 0
   })
