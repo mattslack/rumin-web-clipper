@@ -204,6 +204,14 @@
     }
 
     if (req.pageContext) {
+      const renderPreview = function (src) {
+        const previewWrapper = document.querySelector('#thumbnail')
+        while (previewWrapper.firstElementChild) {
+          previewWrapper.firstElementChild.remove()
+        }
+        previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
+      }
+
       // favIconUrl = sender.tab.favIconUrl
 
       // no saved title from local storage
@@ -244,6 +252,10 @@
         }
         if (customFields.page_title !== undefined && customFields.page_title === title) {
           delete customFields.page_title
+        }
+        if (customFields.url !== undefined) {
+          renderPreview(customFields.url)
+          document.querySelector('#save_btn').disabled = false
         }
         const customFieldElements = Object.keys(customFields).map(fieldName => {
           return buildCustomField(fieldName, customFields[fieldName])
