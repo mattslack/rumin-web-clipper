@@ -160,26 +160,36 @@ const archDailyFields = () => {
   let copyright
   let description = document.querySelector('.afd-gal-description')
   let url
-  const pathname = window.location.pathname.split('/').filter((segment) => segment.length > 0)
-  if (pathname.length >= 3) {
-    const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
-    if (activeSlide) {
-      copyright = document.querySelector('.afd-gal-figcaption__link')
-      url = activeSlide.querySelector('img').dataset.largesrc
-    }
-    description = description === null ? '' : description.textContent.trim()
-  } else {
-    copyright = document.querySelector('.featured-image figcaption')
-    url = document.querySelector('.featured-image img').src
-  }
+  const pathname = window.location.pathname.split('/').filter((segment, index) => {
+    if (index === 0) return segment.length > 2
+    return segment.length > 0
+  })
   const specItems = document.querySelectorAll('.afd-specs__item')
   const topics = []
+
   for (const item of specItems) {
     const key = item.querySelector('.afd-specs__key')
     const value = item.querySelector('.afd-specs__value')
     if (key && value) {
       topics.push({ topic: key.textContent.trim().replace(/:.*$/, ''), value: value.textContent.trim() })
     }
+  }
+
+  if (pathname.length >= 3) { // You're in a photo gallery
+    const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
+    if (activeSlide) {
+      copyright = document.querySelector('.afd-gal-figcaption__link')
+      url = activeSlide.querySelector('img').dataset.largesrc
+    }
+    description = description === null ? '' : description.textContent.trim()
+    const articleURL = document.querySelector('a.afd-gal-close')
+    if (articleURL) {
+      topics.push({ topic: 'ArchDaily URL', value: articleURL.href })
+    }
+  } else { // You're on an article page
+    copyright = document.querySelector('.featured-image figcaption')
+    url = document.querySelector('.featured-image img').src
+    topics.push({ topic: 'ArchDaily URL', value: window.location.href })
   }
 
   if (copyright) {
@@ -191,7 +201,6 @@ const archDailyFields = () => {
     }
     topics.push({ topic: 'Copyright Holder', value: copyright })
   }
-  topics.push({ topic: 'ArchDaily URL', value: window.location.href })
 
   return ({
     notes: description,
