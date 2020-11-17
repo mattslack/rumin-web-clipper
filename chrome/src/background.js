@@ -10,35 +10,20 @@ function sendMsgToContentScript (msg) {
   })
 }
 
-// chrome.runtime.onConnect.addListener(() => {
-// })
-
-// chrome.permissions.contains({
-//     permissions: ['storage']
-//   }, function(result) {
-//   if (result) {
-//     // notify content script
-//     // sendMsgToContentScript({hasStoragePermission: true})
-//   }
-// })
-
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.popupOpen) {
     // console.log('popup is open');
 
     sendMsgToContentScript({ message: 'clicked_browser_action' })
   }
+})
 
-  if (message.takeScreenshot) {
-    // console.log('TODO - take a screenshot')
+const onSaveToDreamHouse = (info, tab, foo) => {
+  sendMsgToContentScript({ message: 'save_to_dream_house', info: info, tab: tab, foo: foo })
+}
 
-    chrome.tabs.captureVisibleTab(null, {
-      format: 'png'
-    }, function (data) {
-      // screenshot.data = data;
-      // console.log('screenshot data', data)
-
-      chrome.runtime.sendMessage({ screenshotCaptured: true, screenshotData: data })
-    })
-  }
+chrome.contextMenus.onClicked.addListener(onSaveToDreamHouse)
+chrome.contextMenus.create({
+  contexts: ['image'],
+  title: 'Save to DreamHouse'
 })

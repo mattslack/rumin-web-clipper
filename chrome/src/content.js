@@ -1,9 +1,4 @@
 /* global $, chrome */
-const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited'
-let prevDOM = null
-let selectingDOM = false
-let selectedElements = []
-let hasStoragePermission = false
 
 // function isElementVisible(el) {
 //   const o = new IntersectionObserver(([entry]) => {
@@ -11,65 +6,6 @@ let hasStoragePermission = false
 //   });
 //   o.observe(el)
 // }
-
-const clearSelection = () => {
-  unstyleSelectedElements()
-
-  selectedElements = []
-  $(document).unbind('mousemove')
-}
-
-const unstyleSelectedElements = () => {
-  if (selectedElements.length > 0) {
-    selectedElements.forEach(el => {
-      // console.log('el in selectedElements', el)
-      el.classList.remove(MOUSE_VISITED_CLASSNAME)
-    })
-  }
-}
-
-// Extract selected fields for Slack
-const slackFields = () => {
-  const messages = selectedElements.map(el => {
-    let selector = $(el)
-    if (!el.classList.contains('c-virtual_list__item') && !el.classList.contains('c-message_kit__gutter')) {
-      selector = $(el).closest('.c-virtual_list__item')
-    }
-
-    if (selector.length === 0) return null
-
-    const sender = selector.find('.c-message__sender').text()
-    const link = selector.find('a.c-link.c-timestamp')[0].href
-    const text = selector.find('.p-rich_text_block').text()
-
-    return ({
-      sender_name: sender,
-      message_link: link,
-      message_text: text
-    })
-  })
-
-  return { messages: messages.filter((m) => m) }
-}
-
-const redditSelectedFields = () => {
-  const comments = selectedElements.map(el => {
-    const comment = {}
-
-    const commentBody = $(el).find('div[data-test-id="comment"]')
-    if (commentBody.length === 0) return null
-    comment.body = commentBody.text()
-
-    const timestamp = $(el).find('[id^=CommentTopMeta--Created--]')
-    if (timestamp.length > 0) {
-      comment.url = timestamp[0].href
-    }
-
-    return comment
-  })
-
-  return { comments: comments.filter(c => c) }
-}
 
 // parse '(hh):mm:ss' string into seconds
 const timeStringToSeconds = (str) => {
@@ -187,8 +123,11 @@ const archDailyFields = () => {
       topics.push({ topic: 'ArchDaily URL', value: articleURL.href })
     }
   } else { // You're on an article page
-    copyright = document.querySelector('.featured-image figcaption')
-    url = document.querySelector('.featured-image img').src
+    const img = document.querySelector('.featured-image, .media-picture')
+    if (img) {
+      copyright = img.querySelector('figcaption')
+      url = img.querySelector('img').src
+    }
     topics.push({ topic: 'ArchDaily URL', value: window.location.href })
   }
 
@@ -290,14 +229,6 @@ const isKindleNotebookPage = () => {
   return window.location.href.startsWith('https://read.amazon.com/notebook')
 }
 
-const isSlackPage = () => {
-  return window.location.href.startsWith('https://app.slack.com/client/')
-}
-
-const isRedditPage = () => {
-  return window.location.href.includes('reddit.com/r/') && window.location.href.includes('comments')
-}
-
 const isEdxLecturePage = () => {
   return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
 }
@@ -314,13 +245,118 @@ const isPinterestPage = () => {
   return /pinterest.com$/.test(window.location.hostname) && /^\/pin\//.test(window.location.pathname)
 }
 
-const parseSelectedElements = () => {
-  if (isSlackPage()) {
-    return slackFields()
+const processPage = (customFields, sel) => {
+  let titleOverride = null
+  let urlOverride = null
+  // Youtube video
+  if (isYoutubeVideoPage()) {
+    const fields = youtubeFields()
+    Object.assign(customFields, fields)
+
+    // TODO - replace an existing parameter
+    if (window.location.search.includes('t=')) {
+      urlOverride = `${window.location.origin}${window.location.pathname}${window.location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
+    } else {
+      urlOverride = `${window.location.href}&t=${timeStringToSeconds(fields.current_time)}`
+    }
   }
 
-  if (isRedditPage()) {
-    return redditSelectedFields()
+  // Netflix Video
+  if (isNetflixVideoPage()) {
+    const fields = netflixFields()
+    Object.assign(customFields, fields)
+  }
+
+  // Skillshare video
+  if (isSkillshareVideoPage()) {
+    const fields = skillShareFields()
+    Object.assign(customFields, fields)
+  }
+
+  // Linkedin Learning
+  if (isLinkedinLearningPage()) {
+    const fields = linkedinLearningFields()
+    Object.assign(customFields, fields)
+  }
+
+  // Kindle Cloud reader
+  if (isKindleCloudReaderPage()) {
+  }
+
+  // Arch Daily
+  if (isArchDailyPage()) {
+    Object.assign(customFields, archDailyFields())
+    titleOverride = document.querySelector('h1').textContent || null
+  }
+
+  // Houzz Page
+  if (isHouzzPage()) {
+    Object.assign(customFields, houzzFields())
+    titleOverride = document.title || null
+  }
+
+  // Pinterest Pin
+  if (isPinterestPage()) {
+    Object.assign(customFields, pinterestPinFields())
+    titleOverride = document.querySelector('h1').textContent || null
+  }
+
+  // Page title
+  if ($('h1').length > 0) {
+    customFields.page_title = $('h1')[0].textContent.trim()
+  }
+
+  // edX
+  if (isEdxLecturePage()) {
+    Object.assign(customFields, edxLectureFields())
+  }
+
+  // if (isMedium)
+  // Kindle Notes and Highlights: https://read.amazon.com/notebook
+  // Go to the first book
+  // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
+  // document in the first kindle iframe
+  // $('#KindleReaderIFrame').get(0).contentDocument
+  if (isKindleNotebookPage()) {
+    console.log('is kindle notebook page!')
+
+    titleOverride = $('h3').text()
+    customFields.page_title = $('h3').text()
+    customFields.book_title = $('h3').text()
+    customFields.book_author = $('p.kp-notebook-metadata')[1].innerText
+
+    let currRow
+
+    if (sel && sel.rangeCount > 0) {
+      const selectionEl = sel.getRangeAt(0).startContainer.parentNode
+
+      if (selectionEl.classList.contains('a-row')) {
+        currRow = selectionEl
+        // closestId = selectionEl.id
+      } else {
+        const prevSibling = $(selectionEl).prev('.a-row')
+        const prevParent = $(selectionEl).closest('.a-row')
+
+        if (prevSibling.length > 0) {
+          // closestId = prevSibling[0].id
+          currRow = prevSibling
+        } else if (prevParent.length > 0) {
+          // closestId = prevParent[0].id
+          currRow = prevParent
+        }
+      }
+
+      console.log('currRow', currRow)
+      const prevRow = $(selectionEl).closest('.kp-notebook-row-separator')
+      console.log('prevRow', prevRow)
+
+      customFields.book_location = prevRow.find('#annotationHighlightHeader')[0].innerText
+    }
+  }
+  return {
+    customFields: customFields,
+    titleOverride: titleOverride,
+    urlOverride: urlOverride
   }
 }
 
@@ -335,17 +371,7 @@ chrome.runtime.onMessage.addListener(
     //   }
     // }
 
-    if (request.hasStoragePermission === true) {
-      hasStoragePermission = true
-      sendResponse({ ack: true })
-    }
-
-    if (request.clearSelection === true) {
-      clearSelection()
-      sendResponse({ ack: true })
-    }
-
-    if (request.message === 'clicked_browser_action') {
+    if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
       const sel = window.getSelection()
       const selectionText = sel.toString()
 
@@ -377,119 +403,13 @@ chrome.runtime.onMessage.addListener(
         }
       }
 
-      // Youtube video
-      if (isYoutubeVideoPage()) {
-        const fields = youtubeFields()
-        Object.assign(customFields, fields)
+      const processedPage = processPage(customFields, sel)
+      customFields = processedPage.customFields
+      titleOverride = processedPage.titleOverride
+      urlOverride = processedPage.urlOverride || null
 
-        // TODO - replace an existing t parameter
-        if (window.location.search.includes('t=')) {
-          urlOverride = `${window.location.origin}${window.location.pathname}${window.location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
-        } else {
-          urlOverride = `${window.location.href}&t=${timeStringToSeconds(fields.current_time)}`
-        }
-      }
-
-      // Netflix Video
-      if (isNetflixVideoPage()) {
-        const fields = netflixFields()
-        Object.assign(customFields, fields)
-      }
-
-      // Skillshare video
-      if (isSkillshareVideoPage()) {
-        const fields = skillShareFields()
-        Object.assign(customFields, fields)
-      }
-
-      // Linkedin Learning
-      if (isLinkedinLearningPage()) {
-        const fields = linkedinLearningFields()
-        Object.assign(customFields, fields)
-      }
-
-      // Kindle Cloud reader
-      if (isKindleCloudReaderPage()) {
-      }
-
-      // Arch Daily
-      if (isArchDailyPage()) {
-        Object.assign(customFields, archDailyFields())
-        titleOverride = document.querySelector('h1').textContent || null
-      }
-
-      // Houzz Page
-      if (isHouzzPage()) {
-        Object.assign(customFields, houzzFields())
-        titleOverride = document.title || null
-      }
-
-      // Pinterest Pin
-      if (isPinterestPage()) {
-        Object.assign(customFields, pinterestPinFields())
-        titleOverride = document.querySelector('h1').textContent || null
-      }
-
-      // Page title
-      if ($('h1').length > 0) {
-        customFields.page_title = $('h1')[0].textContent.trim()
-      }
-
-      // edX
-      if (isEdxLecturePage()) {
-        Object.assign(customFields, edxLectureFields())
-      }
-
-      // if (isMedium)
-      // Kindle Notes and Highlights: https://read.amazon.com/notebook
-      // Go to the first book
-      // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
-      // document in the first kindle iframe
-      // $('#KindleReaderIFrame').get(0).contentDocument
-      if (isKindleNotebookPage()) {
-        console.log('is kindle notebook page!')
-
-        titleOverride = $('h3').text()
-        customFields.page_title = $('h3').text()
-        customFields.book_title = $('h3').text()
-        customFields.book_author = $('p.kp-notebook-metadata')[1].innerText
-
-        let currRow
-
-        if (sel && sel.rangeCount > 0) {
-          const selectionEl = sel.getRangeAt(0).startContainer.parentNode
-
-          if (selectionEl.classList.contains('a-row')) {
-            currRow = selectionEl
-            // closestId = selectionEl.id
-          } else {
-            const prevSibling = $(selectionEl).prev('.a-row')
-            const prevParent = $(selectionEl).closest('.a-row')
-
-            if (prevSibling.length > 0) {
-              // closestId = prevSibling[0].id
-              currRow = prevSibling
-            } else if (prevParent.length > 0) {
-              // closestId = prevParent[0].id
-              currRow = prevParent
-            }
-          }
-
-          console.log('currRow', currRow)
-          const prevRow = $(selectionEl).closest('.kp-notebook-row-separator')
-          console.log('prevRow', prevRow)
-
-          customFields.book_location = prevRow.find('#annotationHighlightHeader')[0].innerText
-        }
-      }
-
-      if (selectedElements.length > 0) {
-        const selectedFields = parseSelectedElements()
-
-        customFields = {
-          ...customFields,
-          ...selectedFields
-        }
+      if (request.message === 'save_to_dream_house') {
+        Object.assign(customFields, { url: request.info.srcUrl })
       }
 
       const pageContext = {
@@ -508,55 +428,5 @@ chrome.runtime.onMessage.addListener(
       chrome.runtime.sendMessage(pageContext, function (response) {
       })
     }
-
-    if (request.addSelection) {
-      selectingDOM = true
-
-      console.log('in addSelection in content script')
-      sendResponse({ ack: true })
-
-      $(document).mousemove(function (e) {
-        var target = e.target
-
-        // console.log('target', target)
-        const whiteListedNodes = ['DIV', 'IMG', 'A', 'P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5']
-
-        // if (whiteListedClasses && target.class)
-        // TODO - perhaps we should restrict what elements can be added?
-        // do it by source
-
-        if (whiteListedNodes.includes(target.nodeName)) {
-          // For NPE checking, we check safely. We need to remove the class name
-          // Since we will be styling the new one after.
-          if (prevDOM != null && !selectedElements.includes(prevDOM)) {
-            prevDOM.classList.remove(MOUSE_VISITED_CLASSNAME)
-          }
-          // Add a visited class name to the element. So we can style it.
-          target.classList.add(MOUSE_VISITED_CLASSNAME)
-          // The current element is now the previous. So we can remove the class
-          // during the next iteration.
-          prevDOM = target
-        }
-      })
-    }
-
-    if (request.cancelSelection) {
-      selectingDOM = false
-      $(document).unbind('mousemove')
-    }
   }
 )
-
-$(function () {
-  document.addEventListener('click', (e) => {
-    if (selectingDOM) {
-      if (hasStoragePermission) {
-        const element = e.target
-
-        if (selectedElements && selectedElements.includes(element.outerHTML)) return
-
-        selectedElements.push(element)
-      }
-    }
-  })
-})
