@@ -2,12 +2,10 @@
 <html lang="en">
 <head>
 
-  <script src="vendor/jquery-3.4.1.min.js"></script>
-  <link href="css/popup.css"
-        rel="stylesheet">
+  <link href="css/popup.css" rel="stylesheet">
   <title></title>
 </head>
-<body>
+<body id="dhd-popover">
   <div class="tabs">
     <button id="save_tab_btn"
          data-content="save_tab"
@@ -70,62 +68,14 @@
         <div id="custom_fields"
              class="custom-fields-content">
         </div>
-      </div><!-- Custom selection for Slack -->
-      <div id="add_slack_selection"
-           class="btn btn-light form-control hidden"
-           style="margin-bottom: 1em;">
-        <span style="margin-right: 0.5em;"><img src="https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png"
-             alt=""
-             class="btn-icon"></span> <span>Select messages</span>
       </div>
-      <div id="cancel_slack_selection"
-           class="btn btn-light form-control hidden"
-           style="margin-bottom: 1em;">
-        Cancel selection
-      </div><!-- Custom selection for Slack -->
-      <div id="add_reddit_selection"
-           class="btn btn-light form-control hidden"
-           style="margin-bottom: 1em;">
-        <span style="margin-right: 0.5em;"><img
-             src="https://external-preview.redd.it/iDdntscPf-nfWKqzHRGFmhVxZm4hZgaKe5oyFws-yzA.png?auto=webp&amp;s=38648ef0dc2c3fce76d5e1d8639234d8da0152b2"
-             alt=""
-             class="btn-icon"></span> <span>Select messages</span>
-      </div>
-      <div id="cancel_reddit_selection"
-           class="btn btn-light form-control hidden"
-           style="margin-bottom: 1em;">
-        Cancel selection
-      </div>
-      <!--
-      <img id="screenshot_img"
-           alt=""
-           class="hidden">
-      <div id="screenshot_btn"
-           class="btn btn-light form-control"
-           style="margin-bottom: 1em;">
-        <span class=""
-             style="margin-right: 0.5em;"><img src="images/icon-screenshot.png"
-             alt=""
-             class="btn-icon"></span> <span>Add a screenshot</span>
-      </div>
-      -->
     </div>
     <div class="save-btn-container">
       <button type="submit" disabled="disabled" id="save_btn"
            class="btn btn-primary form-control">
         Save
       </button>
-    </div><!-- Selection
-      [body]
-
-      Any notes you want to attach to this
-
-      Explicit Collections of Tags (entities)
-
-      Link to existing blocks
-
-      [Save btn]
-       -->
+    </div>
   </div>
   <div id="lookup_tab" class="section-container hidden">
     <form method="post" action="https://api.dreamhousedesign.com/api/token" id="sign-in-form">

@@ -1,8 +1,10 @@
-/* global $, FormData, chrome, fetch */
+/* global FormData, chrome, fetch */
 (function () {
   let title
   let pageUrl
   let customFields = {}
+  const popover = document.querySelector('#dhd-popover')
+  if (popover === null) return
 
   const apiHost = 'https://api.dreamhousedesign.com'
 
@@ -17,18 +19,16 @@
   }
 
   function activityData () {
-    title = $('#captured_title_field').val()
-    const notes = $('#captured_note_field').val()
+    title = popover.getElementById('captured_title_field')
+    let notes = popover.getElementById('captured_note_field')
+    if (title !== null) title = title.value
+    if (notes !== null) notes = notes.value
 
     const params = Object.assign({}, {
       title: title,
       source_url: pageUrl,
       notes: notes || ''
     }, customFields)
-
-    if (window.selectedSpaces) {
-      params.in_collections = window.selectedSpaces
-    }
 
     return params
   }
@@ -63,6 +63,7 @@
         }
         previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
       }
+      const titleField = popover.getElementById('captured_title_field')
 
       if (!title || (title && title.trim() === '')) {
         title = req.pageContext.titleOverride ? req.pageContext.titleOverride : sender.tab.title
@@ -73,19 +74,18 @@
       customFields = req.pageContext.customFields
 
       if (title.trim() !== '') {
-        $('#captured_title_field').val(title.trim())
+        titleField.value = title.trim()
       } else {
-        $('#captured_title_field').val(pageUrl)
+        titleField.value = pageUrl
       }
 
       if (Object.keys(customFields).length > 0) {
-        $('#custom_fields_section').removeClass('hidden')
+        popover.getElementById('custom_fields_section').classList.remove('hidden')
 
         const divider = '<div class="divider"></div>'
 
-        console.log(customFields)
         if (customFields.notes !== undefined) {
-          document.querySelector('#captured_note_field').value = customFields.notes
+          popover.querySelector('#captured_note_field').value = customFields.notes
           delete customFields.notes
         }
         if (customFields.page_title !== undefined && customFields.page_title === title) {
@@ -93,97 +93,97 @@
         }
         if (customFields.url !== undefined) {
           renderPreview(customFields.url)
-          document.querySelector('#save_btn').disabled = false
+          popover.querySelector('#save_btn').disabled = false
         }
         const customFieldElements = Object.keys(customFields).map(fieldName => {
           return buildCustomField(fieldName, customFields[fieldName])
         }).join(divider)
 
-        $('#custom_fields').html(`
+        popover.getElementById('custom_fields').innerHTML = `
           <div>
             ${customFieldElements}
-          </div>
-        `)
+          </div>`
       }
     }
   })
 
-  $(function () {
-    $('#save_btn').click(function () {
-      // disable button
-      $('#save_btn').html('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
-      $('#save_btn').removeClass()
+  const onSave = (event) => {
+    const saveButton = event.currentTarget
+    // disable button
+    saveButton.innerHTML('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
+    saveButton.setAttribute('class', '')
 
-      const url = `${apiHost}/api/clipboard`
-      const data = activityData()
+    const url = `${apiHost}/api/clipboard`
+    const data = activityData()
 
-      const saveMe = () => {
-        fetch(url, {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: {
-            Authorization: `Bearer ${readCookie('access_token')}`,
-            'Content-Type': 'application/json'
+    const saveMe = () => {
+      fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${readCookie('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then((response) => {
+          if (response.status === 201) {
+            popover.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+          } else if (response.status === 401) {
+            popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
+          } else {
+            popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
           }
         })
-          .then((response) => {
-            if (response.status === 201) {
-              document.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
-            } else if (response.status === 401) {
-              document.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
-            } else {
-              document.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
-            }
-          })
-          .catch((error) => {
-            document.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
-          })
-      }
-
-      saveMe()
-    })
-
-    $('#custom_fields_heading').click(function () {
-      $('.custom-fields-content').toggleClass('hidden')
-      $('.custom_fields_display_icon').toggleClass('hidden')
-    })
-
-    const signInTabBtn = document.querySelector('#lookup_tab_btn')
-    const saveTabBtn = document.querySelector('#save_tab_btn')
-
-    const selectTab = (e) => {
-      if (e.target.classList.contains('tab')) {
-        if (e.type) e.stopImmediatePropagation()
-        const tabs = Array.from(document.querySelectorAll('.tab'))
-        tabs.forEach((tab) => {
-          tab.classList.toggle('active', tab === e.target)
-          document.getElementById(tab.dataset.content).classList.toggle('hidden', tab !== e.target)
-        })
-      }
-    }
-
-    if (readCookie('access_token') === null) {
-      selectTab({ target: signInTabBtn })
-      saveTabBtn.disabled = true
-    }
-
-    document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
-      event.preventDefault()
-      const fd = new FormData(event.currentTarget)
-      fetch(event.currentTarget.getAttribute('action'), {
-        method: 'POST',
-        body: fd
-      })
-        .then((res) => {
-          res.json().then(json => {
-            document.cookie = `access_token=${json.access_token};`
-            saveTabBtn.disabled = false
-            selectTab({ target: saveTabBtn })
-          })
-        })
         .catch((error) => {
-          console.log(error)
+          popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
         })
+    }
+
+    saveMe()
+  }
+  const onSignIn = (event) => {
+    event.preventDefault()
+    const fd = new FormData(event.currentTarget)
+    fetch(event.currentTarget.getAttribute('action'), {
+      method: 'POST',
+      body: fd
     })
+      .then((res) => {
+        res.json().then(json => {
+          document.cookie = `access_token=${json.access_token};`
+          saveTabBtn.disabled = false
+          selectTab({ target: saveTabBtn })
+        })
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  const selectTab = (event) => {
+    if (event.target.classList.contains('tab')) {
+      if (event.type) event.stopImmediatePropagation()
+      const tabs = Array.from(popover.querySelectorAll('.tab'))
+      tabs.forEach((tab) => {
+        tab.classList.toggle('active', tab === event.target)
+        popover.getElementById(tab.dataset.content).classList.toggle('hidden', tab !== event.target)
+      })
+    }
+  }
+
+  popover.getElementById('save_btn').addEventListener('click', onSave)
+  popover.querySelector('#sign-in-form').addEventListener('submit', onSignIn)
+
+  popover.querySelector('#custom_fields_heading').addEventListener('click', function () {
+    popover.querySelector('.custom-fields-content').classList.toggle('hidden')
+    popover.querySelector('.custom_fields_display_icon').classList.toggle('hidden')
   })
+
+  const signInTabBtn = popover.querySelector('#lookup_tab_btn')
+  const saveTabBtn = popover.querySelector('#save_tab_btn')
+
+  if (readCookie('access_token') === null) {
+    selectTab({ target: signInTabBtn })
+    saveTabBtn.disabled = true
+  }
 })()

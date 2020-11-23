@@ -1,4 +1,4 @@
-/* global $, chrome */
+/* global chrome */
 
 // function isElementVisible(el) {
 //   const o = new IntersectionObserver(([entry]) => {
@@ -13,10 +13,10 @@ const timeStringToSeconds = (str) => {
 }
 
 const youtubeFields = () => {
-  const currentTime = $('.ytp-time-current')[0].innerText
-  const channelName = $('.ytd-channel-name yt-formatted-string')[0].innerText
-  const channelUrl = $('.ytd-channel-name yt-formatted-string a')[0].href
-  const publishedDate = $('#date yt-formatted-string.ytd-video-primary-info-renderer')[0].innerText.replace('Premiered ', '') // FIXME - this can break for other languages
+  const currentTime = document.querySelector('.ytp-time-current').textContent
+  const channelName = document.querySelector('.ytd-channel-name yt-formatted-string').textContent
+  const channelUrl = document.querySelector('.ytd-channel-name yt-formatted-string a').href
+  const publishedDate = document.querySelector('#date yt-formatted-string.ytd-video-primary-info-renderer').textContent.replace('Premiered ', '') // FIXME - this can break for other languages
 
   return ({
     current_time: currentTime,
@@ -27,12 +27,12 @@ const youtubeFields = () => {
 }
 
 const linkedinLearningFields = () => {
-  const classTitle = $('.classroom-nav__details h1').text()
-  const currentTime = $('.vjs-current-time').text()
-  const teacherName = $('.authors-entity__name-text').text().trim().split('\n')[0]
-  const teacherUrl = $('a.course-author-entity__lockup').attr('href')
-  const sessionTitle = $('.classroom-toc-item--selected').text()
-  const sessionTranscript = $('.transcripts-component__sections').text().trim()
+  const classTitle = document.querySelector('.classroom-nav__details h1').textContent
+  const currentTime = document.querySelector('.vjs-current-time').textContent
+  const teacherName = document.querySelector('.authors-entity__name-text').textContent.trim().split('\n')[0]
+  const teacherUrl = document.querySelector('a.course-author-entity__lockup').getAttribute('href')
+  const sessionTitle = document.querySelector('.classroom-toc-item--selected').textContent
+  const sessionTranscript = document.querySelector('.transcripts-component__sections').textContent.trim()
 
   return ({
     class_title: classTitle.trim(),
@@ -45,11 +45,11 @@ const linkedinLearningFields = () => {
 }
 
 const skillShareFields = () => {
-  const classTitle = $('.class-details-header-name').text()
-  const currentTime = $('.vjs-current-time-display').text()
-  const teacherName = $('.class-details-header-teacher-link').text()
-  const teacherUrl = $('.class-details-header-teacher-link').attr('href')
-  const sessionTitle = $('.session-item.active .session-item-title').text()
+  const classTitle = document.querySelector('.class-details-header-name').textContent
+  const currentTime = document.querySelector('.vjs-current-time-display').textContent
+  const teacherName = document.querySelector('.class-details-header-teacher-link').textContent
+  const teacherUrl = document.querySelector('.class-details-header-teacher-link').getAttribute('href')
+  const sessionTitle = document.querySelector('.session-item.active .session-item-title').textContent
 
   return ({
     class_title: classTitle.trim(),
@@ -61,9 +61,9 @@ const skillShareFields = () => {
 }
 
 const netflixFields = () => {
-  const videoTitle = $('.video-title h4').text()
-  const episodeTitle = $('.video-title span').text()
-  const currentTime = $('.scrubber-head').attr('aria-valuetext')
+  const videoTitle = document.querySelector('.video-title h4').textContent
+  const episodeTitle = document.querySelector('.video-title span').textContent
+  const currentTime = document.querySelector('.scrubber-head').getAttribute('aria-valuetext')
 
   return ({
     video_title: videoTitle,
@@ -73,14 +73,18 @@ const netflixFields = () => {
 }
 
 const edxLectureFields = () => {
-  const provider = $('.course-header .provider').text()
-  const courseCode = $('.course-header .course-number').text()
-  const courseName = $('.course-header .course-name').text()
+  const provider = document.querySelector('.course-header .provider').textContent
+  const courseCode = document.querySelector('.course-header .course-number').textContent
+  const courseName = document.querySelector('.course-header .course-name').textContent
 
-  const videoUrl = $('.video-sources').length > 0 ? $('.video-sources').get(0).href : null
-  const slidesUrl = $('a[href$=pdf]').length > 0 ? $('a[href$=pdf]').get(0).href : null
+  let videoUrl = document.querySelectorAll('.video-sources')
+  videoUrl = videoUrl.length > 0 ? videoUrl[0].href : null
 
-  const vidTime = $('.vidtime').length > 0 ? $('.vidtime').text().split('/')[0].trim() : null
+  let slidesUrl = document.querySelectorAll('a[href$=pdf]')
+  slidesUrl = slidesUrl.length > 0 ? slidesUrl[0].href : null
+
+  let vidTime = document.querySelectorAll('.vidtime')
+  vidTime = vidTime.length > 0 ? vidTime.textContent.split('/')[0].trim() : null
 
   return ({
     course_provider: provider,
@@ -206,7 +210,7 @@ const pinterestPinFields = () => {
 }
 
 const isLinkedinLearningPage = () => {
-  return window.location.href.startsWith('https://www.linkedin.com/learning/') && $('.classroom-layout__content').length > 0
+  return window.location.href.startsWith('https://www.linkedin.com/learning/') && document.querySelectorAll('.classroom-layout__content').length > 0
 }
 
 const isSkillshareVideoPage = () => {
@@ -245,7 +249,7 @@ const isPinterestPage = () => {
   return /pinterest.com$/.test(window.location.hostname) && /^\/pin\//.test(window.location.pathname)
 }
 
-const processPage = (customFields, sel) => {
+const processPage = (customFields) => {
   let titleOverride = null
   let urlOverride = null
   // Youtube video
@@ -302,8 +306,9 @@ const processPage = (customFields, sel) => {
   }
 
   // Page title
-  if ($('h1').length > 0) {
-    customFields.page_title = $('h1')[0].textContent.trim()
+  const h1 = document.querySelectorAll('h1')
+  if (h1.length > 0) {
+    customFields.page_title = h1[0].textContent.trim()
   }
 
   // edX
@@ -320,38 +325,10 @@ const processPage = (customFields, sel) => {
   if (isKindleNotebookPage()) {
     console.log('is kindle notebook page!')
 
-    titleOverride = $('h3').text()
-    customFields.page_title = $('h3').text()
-    customFields.book_title = $('h3').text()
-    customFields.book_author = $('p.kp-notebook-metadata')[1].innerText
-
-    let currRow
-
-    if (sel && sel.rangeCount > 0) {
-      const selectionEl = sel.getRangeAt(0).startContainer.parentNode
-
-      if (selectionEl.classList.contains('a-row')) {
-        currRow = selectionEl
-        // closestId = selectionEl.id
-      } else {
-        const prevSibling = $(selectionEl).prev('.a-row')
-        const prevParent = $(selectionEl).closest('.a-row')
-
-        if (prevSibling.length > 0) {
-          // closestId = prevSibling[0].id
-          currRow = prevSibling
-        } else if (prevParent.length > 0) {
-          // closestId = prevParent[0].id
-          currRow = prevParent
-        }
-      }
-
-      console.log('currRow', currRow)
-      const prevRow = $(selectionEl).closest('.kp-notebook-row-separator')
-      console.log('prevRow', prevRow)
-
-      customFields.book_location = prevRow.find('#annotationHighlightHeader')[0].innerText
-    }
+    titleOverride = document.querySelector('h3').textContent
+    customFields.page_title = titleOverride
+    customFields.book_title = titleOverride
+    customFields.book_author = document.querySelectorAll('p.kp-notebook-metadata')[1].textContent
   }
   return {
     customFields: customFields,
@@ -372,38 +349,13 @@ chrome.runtime.onMessage.addListener(
     // }
 
     if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
-      const sel = window.getSelection()
-      const selectionText = sel.toString()
-
       // console.log('selectionText', selectionText)
 
       let titleOverride = null
       let urlOverride = null
       let customFields = {}
-      let closestId = ''
 
-      if (sel && sel.rangeCount > 0) {
-        const selectionEl = sel.getRangeAt(0).startContainer.parentNode
-
-        if (selectionEl.id) {
-          closestId = selectionEl.id
-        } else {
-          const prevSibling = $(selectionEl).prev('[id]')
-          const prevParent = $(selectionEl).closest('[id]')
-
-          if (prevSibling.length > 0) {
-            closestId = prevSibling[0].id
-          } else if (prevParent.length > 0) {
-            closestId = prevParent[0].id
-          }
-        }
-
-        if (closestId) {
-          urlOverride = `${window.location.href}#${closestId}`
-        }
-      }
-
-      const processedPage = processPage(customFields, sel)
+      const processedPage = processPage(customFields)
       customFields = processedPage.customFields
       titleOverride = processedPage.titleOverride
       urlOverride = processedPage.urlOverride || null
@@ -416,7 +368,6 @@ chrome.runtime.onMessage.addListener(
         pageContext: {
           urlOverride: urlOverride,
           titleOverride: titleOverride,
-          selection: selectionText,
           // closestId: closestId,
           // page_dom: document.documentElement.outerHTML,
           customFields: customFields
@@ -425,6 +376,7 @@ chrome.runtime.onMessage.addListener(
 
       // console.log('sending pageContext', pageContext, window.getSelection().toString())
 
+      document.body.insertAdjacentHTML('beforeend', '<div style="background: rgba(0,0,0,0.7); bottom: 0; left: 0; position: fixed; right: 0; top: 0; z-index: 100;">Overlay</div>');
       chrome.runtime.sendMessage(pageContext, function (response) {
       })
     }
