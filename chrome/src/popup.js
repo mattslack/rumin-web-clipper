@@ -19,8 +19,8 @@
   }
 
   function activityData () {
-    title = popover.getElementById('captured_title_field')
-    let notes = popover.getElementById('captured_note_field')
+    title = popover.querySelector('#captured_title_field')
+    let notes = popover.querySelector('#captured_note_field')
     if (title !== null) title = title.value
     if (notes !== null) notes = notes.value
 
@@ -63,7 +63,7 @@
         }
         previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
       }
-      const titleField = popover.getElementById('captured_title_field')
+      const titleField = popover.querySelector('#captured_title_field')
 
       if (!title || (title && title.trim() === '')) {
         title = req.pageContext.titleOverride ? req.pageContext.titleOverride : sender.tab.title
@@ -80,7 +80,7 @@
       }
 
       if (Object.keys(customFields).length > 0) {
-        popover.getElementById('custom_fields_section').classList.remove('hidden')
+        popover.querySelector('#custom_fields_section').classList.remove('hidden')
 
         const divider = '<div class="divider"></div>'
 
@@ -99,7 +99,7 @@
           return buildCustomField(fieldName, customFields[fieldName])
         }).join(divider)
 
-        popover.getElementById('custom_fields').innerHTML = `
+        popover.querySelector('#custom_fields').innerHTML = `
           <div>
             ${customFieldElements}
           </div>`
@@ -166,18 +166,14 @@
       const tabs = Array.from(popover.querySelectorAll('.tab'))
       tabs.forEach((tab) => {
         tab.classList.toggle('active', tab === event.target)
-        popover.getElementById(tab.dataset.content).classList.toggle('hidden', tab !== event.target)
+        popover.querySelector(`#${tab.dataset.content}`).classList.toggle('hidden', tab !== event.target)
       })
     }
   }
 
-  popover.getElementById('save_btn').addEventListener('click', onSave)
+  console.log(popover)
+  popover.querySelector('#save_btn').addEventListener('click', onSave)
   popover.querySelector('#sign-in-form').addEventListener('submit', onSignIn)
-
-  popover.querySelector('#custom_fields_heading').addEventListener('click', function () {
-    popover.querySelector('.custom-fields-content').classList.toggle('hidden')
-    popover.querySelector('.custom_fields_display_icon').classList.toggle('hidden')
-  })
 
   const signInTabBtn = popover.querySelector('#lookup_tab_btn')
   const saveTabBtn = popover.querySelector('#save_tab_btn')
