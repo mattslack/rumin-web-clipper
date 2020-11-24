@@ -18,8 +18,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }
 })
 
-const onSaveToDreamHouse = (info, tab, foo) => {
-  sendMsgToContentScript({ message: 'save_to_dream_house', info: info, tab: tab, foo: foo })
+const onSaveToDreamHouse = (info, tab) => {
+  sendMsgToContentScript({ message: 'save_to_dream_house', info: info, tab: tab, t: this.target})
 }
 
 chrome.contextMenus.onClicked.addListener(onSaveToDreamHouse)

@@ -1,4 +1,4 @@
-/* global chrome */
+/* global FormData, chrome, fetch */
 
 // function isElementVisible(el) {
 //   const o = new IntersectionObserver(([entry]) => {
@@ -337,10 +337,301 @@ const processPage = (customFields) => {
   }
 }
 
+const buildPopover = () => {
+  const popover = document.createElement('div')
+  popover.setAttribute('id', 'dhd-popover')
+
+  popover.insertAdjacentHTML('afterbegin', `
+      <div class="tabs">
+        <button id="save_tab_btn"
+             data-content="save_tab"
+             class="tab active">
+          Save
+        </button>
+        <button id="lookup_tab_btn"
+             data-content="lookup_tab"
+             class="tab">
+           Sign In
+        </button>
+      </div>
+      <div id="save_tab"
+           class="capture-container">
+        <div class="capture-form-container">
+          <div class="form-group" id="thumbnail"></div>
+          <div class="form-group">
+            <label for="captured_title_field" class="field-label">
+              Title
+            </label>
+            <input type="text"
+                 id="captured_title_field"
+                 class="title-field form-control"
+                 placeholder="Untitled page"
+                 autofocus="true"
+                 maxlength="300">
+          </div>
+          <div class="captured-selection">
+            <div id="captured_selection"></div>
+          </div>
+          <div class="form-group">
+            <label for="captured_note_field" class="field-label">
+              Note
+            </label>
+            <textarea id="captured_note_field"
+                 class="note-field form-control"
+                 placeholder=""></textarea>
+          </div>
+          <div id="custom_fields_section"
+               class="hidden"
+               style="padding: 0.5em 0">
+            <div id="custom_fields_heading"
+                 class="section-heading flex">
+              <div class="text">
+                Properties
+              </div>
+            </div>
+            <div id="custom_fields"
+                 class="custom-fields-content">
+            </div>
+          </div>
+        </div>
+        <div class="save-btn-container">
+          <button type="submit" disabled="disabled" id="save_btn"
+               class="btn btn-primary form-control">
+            Save
+          </button>
+        </div>
+      </div>
+      <div id="lookup_tab" class="section-container hidden">
+        <form method="post" action="https://api.dreamhousedesign.com/api/token" id="sign-in-form">
+          <div class="form-group">
+            <input type="hidden" name="grant_type" value="password">
+            <label class="field-label" for="email">Email</label>
+            <input class="form-control" type="email" autocomplete="email" id="email" name="username">
+            <br>
+            <label class="field-label" for="password">Password</label>
+            <input class="form-control" type="password" autocomplete="password" id="password" name="password">
+          </div>
+          <div class="save-btn-container">
+            <input type="submit" value="Sign In" class="btn btn-primary form-control">
+          </div>
+        </form>
+      </div>
+    `)
+  return popover
+}
+
+class DreamHouseModal {
+  constructor (popover) {
+    this.apiHost = 'https://api.dreamhousedesign.com'
+    this.pageUrl = null
+    this.popover = popover
+    this.title = null
+
+    /*
+    popover.querySelector('#save_btn').addEventListener('click', this._onSave)
+    popover.querySelector('#sign-in-form').addEventListener('submit', this._onSignIn)
+
+    this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
+    this.saveTabBtn = popover.querySelector('#save_tab_btn')
+
+    if (readCookie('access_token') === null) {
+      this._selectTab({ target: this.signInTabBtn })
+      this.saveTabBtn.disabled = true
+    }
+    */
+  }
+
+  get activityData () {
+    let title = this.popover.querySelector('#captured_title_field')
+    let notes = this.popover.querySelector('#captured_note_field')
+    if (title !== null) title = title.value
+    if (notes !== null) notes = notes.value
+
+    const params = Object.assign({}, {
+      title: title,
+      source_url: this.pageUrl,
+      notes: notes || ''
+    }, this.customFields)
+
+    return params
+  }
+
+  buildCustomField (name, value) {
+    if (typeof value === 'object') {
+      value = JSON.stringify(value, null, 2)
+    }
+
+    return (`
+      <div style="margin-bottom: 0.5em;">
+        <div class="prop-name" style="margin-right: 0.5em;">${name}:</div>
+        <div class="prop-value">${value}</div>
+      </div>
+    `)
+  }
+
+  renderPreview (src) {
+    const previewWrapper = document.querySelector('#thumbnail')
+    while (previewWrapper.firstElementChild) {
+      previewWrapper.firstElementChild.remove()
+    }
+    previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
+  }
+
+  updateContent (pageContext) {
+    const titleField = this.popover.querySelector('#captured_title_field')
+    if (!this.title || (this.title && this.title.trim() === '')) {
+      this.title = pageContext.titleOverride ? pageContext.titleOverride : document.title
+      this.title = this.title.slice(0, 300)
+    }
+
+    this.pageUrl = pageContext.urlOverride ? pageContext.urlOverride : window.location.url
+    const customFields = pageContext.customFields
+
+    if (this.title.trim() !== '') {
+      titleField.value = this.title.trim()
+    } else {
+      titleField.value = this.pageUrl
+    }
+
+    if (Object.keys(customFields).length > 0) {
+      this.popover.querySelector('#custom_fields_section').classList.remove('hidden')
+
+      const divider = '<div class="divider"></div>'
+
+      if (customFields.notes !== undefined) {
+        this.popover.querySelector('#captured_note_field').value = customFields.notes
+        delete this.customFields.notes
+      }
+
+      if (customFields.page_title !== undefined && customFields.page_title === this.title) {
+        delete this.customFields.page_title
+      }
+
+      if (customFields.url !== undefined) {
+        this.renderPreview(this.customFields.url)
+        this.popover.querySelector('#save_btn').disabled = false
+      }
+
+      const customFieldElements = Object.keys(customFields).map(fieldName => {
+        return this.buildCustomField(fieldName, customFields[fieldName])
+      }).join(divider)
+
+      this.popover.querySelector('#custom_fields').innerHTML = `
+        <div>
+          ${customFieldElements}
+        </div>`
+    }
+  }
+
+  _onSave (event) {
+    const popover = event.currentTarget.closest('#dhd-popover')
+    const saveButton = event.currentTarget
+    // disable button
+    saveButton.innerHTML('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
+    saveButton.setAttribute('class', '')
+
+    const url = `${this.apiHost}/api/clipboard`
+    const data = this.activityData
+
+    const saveMe = () => {
+      fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${readCookie('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then((response) => {
+          if (response.status === 201) {
+            popover.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+          } else if (response.status === 401) {
+            popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
+          } else {
+            popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
+          }
+        })
+        .catch((error) => {
+          popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
+        })
+    }
+
+    saveMe()
+  }
+
+  _onSignIn (event) {
+    event.preventDefault()
+    const fd = new FormData(event.currentTarget)
+    fetch(event.currentTarget.getAttribute('action'), {
+      method: 'POST',
+      body: fd
+    })
+      .then((res) => {
+        res.json().then(json => {
+          document.cookie = `access_token=${json.access_token};`
+          this.saveTabBtn.disabled = false
+          this._selectTab({ target: this.saveTabBtn })
+        })
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  _selectTab (event) {
+    const popover = event.currentTarbet.closest('#dhd-popover')
+    if (event.target.classList.contains('tab')) {
+      if (event.type) event.stopImmediatePropagation()
+      const tabs = Array.from(popover.querySelectorAll('.tab'))
+      tabs.forEach((tab) => {
+        tab.classList.toggle('active', tab === event.target)
+        popover.querySelector(`#${tab.dataset.content}`).classList.toggle('hidden', tab !== event.target)
+      })
+    }
+  }
+}
+
+const readCookie = (name) => {
+  const nameEQ = name + '='
+  const ca = document.cookie.split(';')
+  for (var c of ca) {
+    while (c.charAt(0) === ' ') c.substring(1, c.length)
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+  }
+  return null
+}
+
+const saveToDreamHouse = (request) => {
+  let titleOverride = null
+  let urlOverride = null
+  let customFields = {}
+
+  const processedPage = processPage(customFields)
+  customFields = processedPage.customFields
+  titleOverride = processedPage.titleOverride
+  urlOverride = processedPage.urlOverride || null
+
+  Object.assign(customFields, { url: request.info.srcUrl })
+
+  const pageContext = {
+    urlOverride: urlOverride,
+    titleOverride: titleOverride,
+    // closestId: closestId,
+    // page_dom: document.documentElement.outerHTML,
+    customFields: customFields
+  }
+
+  const backdrop = document.createElement('div')
+  backdrop.setAttribute('id', 'dhd-backdrop')
+  const popover = buildPopover()
+  const modal = new DreamHouseModal(popover)
+  backdrop.appendChild(popover)
+  document.body.appendChild(backdrop)
+  modal.updateContent(pageContext)
+}
+
 chrome.runtime.onMessage.addListener(
   function (request, sender, sendResponse) {
-    // console.log(request.message);
-
     // if (request.disconnect === true) {
     //   if (hasStoragePermission) {
     //     chrome.storage.local.clear()
@@ -348,37 +639,8 @@ chrome.runtime.onMessage.addListener(
     //   }
     // }
 
-    if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
-      // console.log('selectionText', selectionText)
-
-      let titleOverride = null
-      let urlOverride = null
-      let customFields = {}
-
-      const processedPage = processPage(customFields)
-      customFields = processedPage.customFields
-      titleOverride = processedPage.titleOverride
-      urlOverride = processedPage.urlOverride || null
-
-      if (request.message === 'save_to_dream_house') {
-        Object.assign(customFields, { url: request.info.srcUrl })
-      }
-
-      const pageContext = {
-        pageContext: {
-          urlOverride: urlOverride,
-          titleOverride: titleOverride,
-          // closestId: closestId,
-          // page_dom: document.documentElement.outerHTML,
-          customFields: customFields
-        }
-      }
-
-      // console.log('sending pageContext', pageContext, window.getSelection().toString())
-
-      document.body.insertAdjacentHTML('beforeend', '<div style="background: rgba(0,0,0,0.7); bottom: 0; left: 0; position: fixed; right: 0; top: 0; z-index: 100;">Overlay</div>');
-      chrome.runtime.sendMessage(pageContext, function (response) {
-      })
+    if (request.message === 'save_to_dream_house') {
+      saveToDreamHouse(request)
     }
   }
 )
