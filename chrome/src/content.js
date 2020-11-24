@@ -1,8 +1,4 @@
-const MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited';
-let prevDOM = null
-let selectingDOM = false
-let selectedElements = []
-let hasStoragePermission = false
+/* global FormData, chrome, fetch */
 
 // function isElementVisible(el) {
 //   const o = new IntersectionObserver(([entry]) => {
@@ -11,100 +7,16 @@ let hasStoragePermission = false
 //   o.observe(el)
 // }
 
-const getTopTermsInDoc = () => {
-  const corpus = new TinyTFIDF.Corpus(['doc1'], [$('body').text()])
-  return corpus.getTopTermsForDocument('doc1').slice(0, 15)
-}
-
-const initSelectedElements = () => {
-  // get fetch existing selectedElements
-  chrome.storage.local.get(['selectedElements'], function(result) {
-    console.log('result.selectedElements', result.selectedElements)
-
-    selectedElements = result.selectedElements || []
-  })
-}
-
-const clearSelection = () => {
-  unstyleSelectedElements()
-
-  selectedElements = []
-  $(document).unbind('mousemove')
-}
-
-const unstyleSelectedElements = () => {
-  if (selectedElements.length > 0) {
-    selectedElements.forEach(el => {
-      // console.log('el in selectedElements', el)
-      el.classList.remove(MOUSE_VISITED_CLASSNAME);
-    })
-  }
-}
-
-const styleSelectedElements = () => {
-  if (selectedElements.length > 0) {
-    selectedElements.forEach(el => {
-      // console.log('el in selectedElements', el)
-      el.classList.add(MOUSE_VISITED_CLASSNAME);
-    })
-  }
-}
-
-// Extract selected fields for Slack
-const slackFields = () => {
-  const messages = selectedElements.map(el => {
-    let selector = $(el)
-    if (!el.classList.contains('c-virtual_list__item') && !el.classList.contains('c-message_kit__gutter')) {
-      selector = $(el).closest('.c-virtual_list__item')
-    }
-
-    if (selector.length === 0) return null
-
-    const sender = selector.find('.c-message__sender').text()
-    const link = selector.find('a.c-link.c-timestamp')[0]['href']
-    const text = selector.find('.p-rich_text_block').text() 
-
-    return({
-      sender_name: sender,
-      message_link: link,
-      message_text: text
-    })
-  })
-
-  return { messages: messages.filter((m) => m) }
-}
-
-const redditSelectedFields = () => {
-  const comments = selectedElements.map(el => {
-    let selector = $(el)
-
-    let comment = {}
-
-    const commentBody = $(el).find('div[data-test-id="comment"]')
-    if (commentBody.length === 0) return null
-    comment.body = commentBody.text()
-
-    const timestamp = $(el).find('[id^=CommentTopMeta--Created--]')
-    if (timestamp.length > 0) {
-      comment.url = timestamp[0]['href']
-    }
-
-    return comment
-  })
-
-  return { comments: comments.filter(c => c) }
-}
-
 // parse '(hh):mm:ss' string into seconds
 const timeStringToSeconds = (str) => {
-  return str.split(':').reverse().reduce((prev, curr, i) => prev + curr*Math.pow(60, i), 0)
+  return str.split(':').reverse().reduce((prev, curr, i) => prev + curr * Math.pow(60, i), 0)
 }
 
 const youtubeFields = () => {
-  const currentTime = $('.ytp-time-current')[0].innerText
-  const channelName = $('.ytd-channel-name yt-formatted-string')[0].innerText
-  const channelUrl = $('.ytd-channel-name yt-formatted-string a')[0]['href']
-  const publishedDate = $('#date yt-formatted-string.ytd-video-primary-info-renderer')[0].innerText.replace('Premiered ', '') // FIXME - this can break for other languages
+  const currentTime = document.querySelector('.ytp-time-current').textContent
+  const channelName = document.querySelector('.ytd-channel-name yt-formatted-string').textContent
+  const channelUrl = document.querySelector('.ytd-channel-name yt-formatted-string a').href
+  const publishedDate = document.querySelector('#date yt-formatted-string.ytd-video-primary-info-renderer').textContent.replace('Premiered ', '') // FIXME - this can break for other languages
 
   return ({
     current_time: currentTime,
@@ -115,14 +27,14 @@ const youtubeFields = () => {
 }
 
 const linkedinLearningFields = () => {
-  const classTitle = $('.classroom-nav__details h1').text()
-  const currentTime = $('.vjs-current-time').text()
-  const teacherName = $('.authors-entity__name-text').text().trim().split("\n")[0]
-  const teacherUrl = $('a.course-author-entity__lockup').attr('href')
-  const sessionTitle = $('.classroom-toc-item--selected').text()
-  const sessionTranscript = $('.transcripts-component__sections').text().trim()
+  const classTitle = document.querySelector('.classroom-nav__details h1').textContent
+  const currentTime = document.querySelector('.vjs-current-time').textContent
+  const teacherName = document.querySelector('.authors-entity__name-text').textContent.trim().split('\n')[0]
+  const teacherUrl = document.querySelector('a.course-author-entity__lockup').getAttribute('href')
+  const sessionTitle = document.querySelector('.classroom-toc-item--selected').textContent
+  const sessionTranscript = document.querySelector('.transcripts-component__sections').textContent.trim()
 
-  return({
+  return ({
     class_title: classTitle.trim(),
     current_time: currentTime,
     teacher_name: teacherName.trim(),
@@ -133,13 +45,13 @@ const linkedinLearningFields = () => {
 }
 
 const skillShareFields = () => {
-  const classTitle = $('.class-details-header-name').text()
-  const currentTime = $('.vjs-current-time-display').text()
-  const teacherName = $('.class-details-header-teacher-link').text()
-  const teacherUrl = $('.class-details-header-teacher-link').attr('href')
-  const sessionTitle = $('.session-item.active .session-item-title').text()
+  const classTitle = document.querySelector('.class-details-header-name').textContent
+  const currentTime = document.querySelector('.vjs-current-time-display').textContent
+  const teacherName = document.querySelector('.class-details-header-teacher-link').textContent
+  const teacherUrl = document.querySelector('.class-details-header-teacher-link').getAttribute('href')
+  const sessionTitle = document.querySelector('.session-item.active .session-item-title').textContent
 
-  return({
+  return ({
     class_title: classTitle.trim(),
     current_time: currentTime,
     teacher_name: teacherName.trim(),
@@ -149,11 +61,11 @@ const skillShareFields = () => {
 }
 
 const netflixFields = () => {
-  const videoTitle = $('.video-title h4').text()
-  const episodeTitle = $('.video-title span').text()
-  const currentTime = $('.scrubber-head').attr('aria-valuetext')
+  const videoTitle = document.querySelector('.video-title h4').textContent
+  const episodeTitle = document.querySelector('.video-title span').textContent
+  const currentTime = document.querySelector('.scrubber-head').getAttribute('aria-valuetext')
 
-  return({
+  return ({
     video_title: videoTitle,
     episode_title: episodeTitle,
     current_time: currentTime
@@ -161,16 +73,20 @@ const netflixFields = () => {
 }
 
 const edxLectureFields = () => {
-  const provider = $('.course-header .provider').text()
-  const courseCode = $('.course-header .course-number').text()
-  const courseName = $('.course-header .course-name').text()
-       
-  const videoUrl = $('.video-sources').length > 0 ? $('.video-sources').get(0)['href'] : null
-  const slidesUrl = $('a[href$=pdf]').length > 0 ? $('a[href$=pdf]').get(0)['href'] : null
+  const provider = document.querySelector('.course-header .provider').textContent
+  const courseCode = document.querySelector('.course-header .course-number').textContent
+  const courseName = document.querySelector('.course-header .course-name').textContent
 
-  const vidTime = $('.vidtime').length > 0 ? $('.vidtime').text().split('/')[0].trim() : null
+  let videoUrl = document.querySelectorAll('.video-sources')
+  videoUrl = videoUrl.length > 0 ? videoUrl[0].href : null
 
-  return({
+  let slidesUrl = document.querySelectorAll('a[href$=pdf]')
+  slidesUrl = slidesUrl.length > 0 ? slidesUrl[0].href : null
+
+  let vidTime = document.querySelectorAll('.vidtime')
+  vidTime = vidTime.length > 0 ? vidTime.textContent.split('/')[0].trim() : null
+
+  return ({
     course_provider: provider,
     course_code: courseCode,
     course_name: courseName,
@@ -180,56 +96,542 @@ const edxLectureFields = () => {
   })
 }
 
+const archDailyFields = () => {
+  let copyright
+  let description = document.querySelector('.afd-gal-description')
+  let url
+  const pathname = window.location.pathname.replace(/^\//, '').split('/').filter((segment, index) => {
+    if (index === 0) return segment.length > 2
+    return segment.length > 0
+  })
+  const specItems = document.querySelectorAll('.afd-specs__item')
+  const topics = []
+
+  for (const item of specItems) {
+    const key = item.querySelector('.afd-specs__key')
+    const value = item.querySelector('.afd-specs__value')
+    if (key && value) {
+      topics.push({ topic: key.textContent.trim().replace(/:.*$/, ''), value: value.textContent.trim() })
+    }
+  }
+
+  if (pathname.length >= 3) { // You're in a photo gallery
+    const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
+    if (activeSlide) {
+      copyright = document.querySelector('.afd-gal-figcaption__link')
+      url = activeSlide.querySelector('img').dataset.largesrc
+    }
+    description = description === null ? '' : description.textContent.trim()
+    const articleURL = document.querySelector('a.afd-gal-close')
+    if (articleURL) {
+      topics.push({ topic: 'ArchDaily URL', value: articleURL.href })
+    }
+  } else { // You're on an article page
+    const img = document.querySelector('.featured-image, .media-picture')
+    if (img) {
+      copyright = img.querySelector('figcaption')
+      url = img.querySelector('img').src
+    }
+    topics.push({ topic: 'ArchDaily URL', value: window.location.href })
+  }
+
+  if (copyright) {
+    copyright = copyright.textContent
+    const copyrightPattern = new RegExp('(©)(.*)', 'i')
+    const copyrightMatch = copyrightPattern.exec(copyright)
+    if (copyrightMatch && copyrightMatch.length >= 2) {
+      copyright = copyrightMatch[2]
+    }
+    topics.push({ topic: 'Copyright Holder', value: copyright })
+  }
+
+  return ({
+    notes: description,
+    topics: topics,
+    url: url
+  })
+}
+
+const houzzFields = () => {
+  const topics = []
+  let notes = null
+  let url = null
+  let image = document.querySelector('img.view-photo-image-pane__image')
+  const description = document.querySelector('.hz-view-photo__space-info__description') || document.querySelector('.vp-redesign-description')
+  if (description) {
+    notes = description.textContent
+  }
+  if (image) {
+    url = image.src
+  } else {
+    image = document.querySelector('.hz-page-content-wrapper--viewProduct img.zoom-pane-image')
+    if (image && image.style.getPropertyValue('background-image')) {
+      url = image.style.getPropertyValue('background-image').replace(/^url\("/, '').replace(/"\)$/, '')
+    }
+  }
+  const productSpecs = document.querySelectorAll('dl .product-spec-item')
+  for (const spec of productSpecs) {
+    const key = spec.querySelector('dt')
+    const value = spec.querySelector('dd')
+    if (key && value) {
+      topics.push({ topic: key.textContent.trim(), value: value.textContent.trim() })
+    }
+  }
+  topics.push({ topic: 'Houzz URL', value: window.location.href })
+  return ({
+    notes: notes,
+    topics: topics,
+    url: url
+  })
+}
+
+const pinterestPinFields = () => {
+  let description = document.querySelector('.richPinInformation span')
+  if (description) description = description.textContent
+  let imageURL = document.querySelector('div[data-test-id="closeup-image"] img + div img')
+  if (imageURL) {
+    imageURL = imageURL.src
+  }
+  let pinnedBy = document.querySelector('.pinActivityContainer svg title, .pinActivityContainer img')
+  if (pinnedBy) {
+    pinnedBy = pinnedBy.alt || pinnedBy.textContent
+  }
+  let pinnedFrom = document.querySelector('a.linkModuleActionButton')
+  if (pinnedFrom) pinnedFrom = pinnedFrom.href
+  return ({
+    notes: description,
+    url: imageURL,
+    topics: [
+      { topic: 'Pin URL', value: window.location.href },
+      { topic: 'Pinned By', value: pinnedBy },
+      { topic: 'Pin Source URL', value: pinnedFrom }
+    ]
+  })
+}
+
 const isLinkedinLearningPage = () => {
-  return location.href.startsWith('https://www.linkedin.com/learning/') && $('.classroom-layout__content').length > 0
+  return window.location.href.startsWith('https://www.linkedin.com/learning/') && document.querySelectorAll('.classroom-layout__content').length > 0
 }
 
 const isSkillshareVideoPage = () => {
-  return location.href.startsWith('https://www.skillshare.com/classes/')
+  return window.location.href.startsWith('https://www.skillshare.com/classes/')
 }
 
 const isNetflixVideoPage = () => {
-  return location.href.startsWith('https://www.netflix.com/watch/')
+  return window.location.href.startsWith('https://www.netflix.com/watch/')
 }
 
 const isYoutubeVideoPage = () => {
-  return location.href.startsWith('https://www.youtube.com/watch?v=')
+  return window.location.href.startsWith('https://www.youtube.com/watch?v=')
 }
 
 const isKindleCloudReaderPage = () => {
-  return location.href.startsWith('https://read.amazon.com') && !location.href.includes('notebook')
+  return window.location.href.startsWith('https://read.amazon.com') && !window.location.href.includes('notebook')
 }
 
 const isKindleNotebookPage = () => {
-  return location.href.startsWith('https://read.amazon.com/notebook')
-}
-
-const isSlackPage = () => {
-  return location.href.startsWith('https://app.slack.com/client/')
-}
-
-const isRedditPage = () => {
-  return location.href.includes('reddit.com/r/') && location.href.includes('comments')
+  return window.location.href.startsWith('https://read.amazon.com/notebook')
 }
 
 const isEdxLecturePage = () => {
-  return location.href.startsWith('https://courses.edx.org/courses/') && location.href.includes('courseware')
+  return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
 }
 
-const parseSelectedElements = () => {
-  if (isSlackPage()) {
-    return slackFields()
+const isArchDailyPage = () => {
+  return /archdaily.com(\.(br|cl|mx|cn))?$/.test(window.location.hostname) && /^\/((br|cl|mx|cn)\/)?\d+\//.test(window.location.pathname)
+}
+
+const isHouzzPage = () => {
+  return /houzz.com$/.test(window.location.hostname)
+}
+
+const isPinterestPage = () => {
+  return /pinterest.com$/.test(window.location.hostname) && /^\/pin\//.test(window.location.pathname)
+}
+
+const processPage = (customFields) => {
+  let titleOverride = null
+  let urlOverride = null
+  // Youtube video
+  if (isYoutubeVideoPage()) {
+    const fields = youtubeFields()
+    Object.assign(customFields, fields)
+
+    // TODO - replace an existing parameter
+    if (window.location.search.includes('t=')) {
+      urlOverride = `${window.location.origin}${window.location.pathname}${window.location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
+    } else {
+      urlOverride = `${window.location.href}&t=${timeStringToSeconds(fields.current_time)}`
+    }
   }
 
-  if (isRedditPage()) {
-    return redditSelectedFields()
+  // Netflix Video
+  if (isNetflixVideoPage()) {
+    const fields = netflixFields()
+    Object.assign(customFields, fields)
   }
+
+  // Skillshare video
+  if (isSkillshareVideoPage()) {
+    const fields = skillShareFields()
+    Object.assign(customFields, fields)
+  }
+
+  // Linkedin Learning
+  if (isLinkedinLearningPage()) {
+    const fields = linkedinLearningFields()
+    Object.assign(customFields, fields)
+  }
+
+  // Kindle Cloud reader
+  if (isKindleCloudReaderPage()) {
+  }
+
+  // Arch Daily
+  if (isArchDailyPage()) {
+    Object.assign(customFields, archDailyFields())
+    titleOverride = document.querySelector('h1').textContent || null
+  }
+
+  // Houzz Page
+  if (isHouzzPage()) {
+    Object.assign(customFields, houzzFields())
+    titleOverride = document.title || null
+  }
+
+  // Pinterest Pin
+  if (isPinterestPage()) {
+    Object.assign(customFields, pinterestPinFields())
+    titleOverride = document.querySelector('h1').textContent || null
+  }
+
+  // Page title
+  const h1 = document.querySelectorAll('h1')
+  if (h1.length > 0) {
+    customFields.page_title = h1[0].textContent.trim()
+  }
+
+  // edX
+  if (isEdxLecturePage()) {
+    Object.assign(customFields, edxLectureFields())
+  }
+
+  // if (isMedium)
+  // Kindle Notes and Highlights: https://read.amazon.com/notebook
+  // Go to the first book
+  // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
+  // document in the first kindle iframe
+  // $('#KindleReaderIFrame').get(0).contentDocument
+  if (isKindleNotebookPage()) {
+    console.log('is kindle notebook page!')
+
+    titleOverride = document.querySelector('h3').textContent
+    customFields.page_title = titleOverride
+    customFields.book_title = titleOverride
+    customFields.book_author = document.querySelectorAll('p.kp-notebook-metadata')[1].textContent
+  }
+  return {
+    customFields: customFields,
+    titleOverride: titleOverride,
+    urlOverride: urlOverride
+  }
+}
+
+const buildPopover = () => {
+  const popover = document.createElement('div')
+  popover.setAttribute('id', 'dhd-popover')
+
+  popover.insertAdjacentHTML('afterbegin', `
+      <div class="tabs">
+        <button id="save_tab_btn"
+             data-content="save_tab"
+             class="tab active">
+          Save
+        </button>
+        <button id="lookup_tab_btn"
+             data-content="lookup_tab"
+             class="tab">
+           Sign In
+        </button>
+      </div>
+      <div id="save_tab"
+           class="capture-container">
+        <div class="capture-form-container">
+          <div class="form-group" id="thumbnail"></div>
+          <div class="form-group">
+            <label for="captured_title_field" class="field-label">
+              Title
+            </label>
+            <input type="text"
+                 id="captured_title_field"
+                 class="title-field form-control"
+                 placeholder="Untitled page"
+                 autofocus="true"
+                 maxlength="300">
+          </div>
+          <div class="captured-selection">
+            <div id="captured_selection"></div>
+          </div>
+          <div class="form-group">
+            <label for="captured_note_field" class="field-label">
+              Note
+            </label>
+            <textarea id="captured_note_field"
+                 class="note-field form-control"
+                 placeholder=""></textarea>
+          </div>
+          <div id="custom_fields_section"
+               class="hidden"
+               style="padding: 0.5em 0">
+            <div id="custom_fields_heading"
+                 class="section-heading flex">
+              <div class="text">
+                Properties
+              </div>
+            </div>
+            <div id="custom_fields"
+                 class="custom-fields-content">
+            </div>
+          </div>
+        </div>
+        <div class="save-btn-container">
+          <button type="submit" disabled="disabled" id="save_btn"
+               class="btn btn-primary form-control">
+            Save
+          </button>
+        </div>
+      </div>
+      <div id="lookup_tab" class="section-container hidden">
+        <form method="post" action="https://api.dreamhousedesign.com/api/token" id="sign-in-form">
+          <div class="form-group">
+            <input type="hidden" name="grant_type" value="password">
+            <label class="field-label" for="email">Email</label>
+            <input class="form-control" type="email" autocomplete="email" id="email" name="username">
+            <br>
+            <label class="field-label" for="password">Password</label>
+            <input class="form-control" type="password" autocomplete="password" id="password" name="password">
+          </div>
+          <div class="save-btn-container">
+            <input type="submit" value="Sign In" class="btn btn-primary form-control">
+          </div>
+        </form>
+      </div>
+    `)
+  return popover
+}
+
+class DreamHouseModal {
+  constructor (popover) {
+    this.apiHost = 'https://api.dreamhousedesign.com'
+    this.pageUrl = null
+    this.popover = popover
+    this.title = null
+
+    /*
+    popover.querySelector('#save_btn').addEventListener('click', this._onSave)
+    popover.querySelector('#sign-in-form').addEventListener('submit', this._onSignIn)
+
+    this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
+    this.saveTabBtn = popover.querySelector('#save_tab_btn')
+
+    if (readCookie('access_token') === null) {
+      this._selectTab({ target: this.signInTabBtn })
+      this.saveTabBtn.disabled = true
+    }
+    */
+  }
+
+  get activityData () {
+    let title = this.popover.querySelector('#captured_title_field')
+    let notes = this.popover.querySelector('#captured_note_field')
+    if (title !== null) title = title.value
+    if (notes !== null) notes = notes.value
+
+    const params = Object.assign({}, {
+      title: title,
+      source_url: this.pageUrl,
+      notes: notes || ''
+    }, this.customFields)
+
+    return params
+  }
+
+  buildCustomField (name, value) {
+    if (typeof value === 'object') {
+      value = JSON.stringify(value, null, 2)
+    }
+
+    return (`
+      <div style="margin-bottom: 0.5em;">
+        <div class="prop-name" style="margin-right: 0.5em;">${name}:</div>
+        <div class="prop-value">${value}</div>
+      </div>
+    `)
+  }
+
+  renderPreview (src) {
+    const previewWrapper = document.querySelector('#thumbnail')
+    while (previewWrapper.firstElementChild) {
+      previewWrapper.firstElementChild.remove()
+    }
+    previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
+  }
+
+  updateContent (pageContext) {
+    const titleField = this.popover.querySelector('#captured_title_field')
+    if (!this.title || (this.title && this.title.trim() === '')) {
+      this.title = pageContext.titleOverride ? pageContext.titleOverride : document.title
+      this.title = this.title.slice(0, 300)
+    }
+
+    this.pageUrl = pageContext.urlOverride ? pageContext.urlOverride : window.location.url
+    const customFields = pageContext.customFields
+
+    if (this.title.trim() !== '') {
+      titleField.value = this.title.trim()
+    } else {
+      titleField.value = this.pageUrl
+    }
+
+    if (Object.keys(customFields).length > 0) {
+      this.popover.querySelector('#custom_fields_section').classList.remove('hidden')
+
+      const divider = '<div class="divider"></div>'
+
+      if (customFields.notes !== undefined) {
+        this.popover.querySelector('#captured_note_field').value = customFields.notes
+        delete this.customFields.notes
+      }
+
+      if (customFields.page_title !== undefined && customFields.page_title === this.title) {
+        delete this.customFields.page_title
+      }
+
+      if (customFields.url !== undefined) {
+        this.renderPreview(this.customFields.url)
+        this.popover.querySelector('#save_btn').disabled = false
+      }
+
+      const customFieldElements = Object.keys(customFields).map(fieldName => {
+        return this.buildCustomField(fieldName, customFields[fieldName])
+      }).join(divider)
+
+      this.popover.querySelector('#custom_fields').innerHTML = `
+        <div>
+          ${customFieldElements}
+        </div>`
+    }
+  }
+
+  _onSave (event) {
+    const popover = event.currentTarget.closest('#dhd-popover')
+    const saveButton = event.currentTarget
+    // disable button
+    saveButton.innerHTML('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
+    saveButton.setAttribute('class', '')
+
+    const url = `${this.apiHost}/api/clipboard`
+    const data = this.activityData
+
+    const saveMe = () => {
+      fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${readCookie('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then((response) => {
+          if (response.status === 201) {
+            popover.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+          } else if (response.status === 401) {
+            popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
+          } else {
+            popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
+          }
+        })
+        .catch((error) => {
+          popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
+        })
+    }
+
+    saveMe()
+  }
+
+  _onSignIn (event) {
+    event.preventDefault()
+    const fd = new FormData(event.currentTarget)
+    fetch(event.currentTarget.getAttribute('action'), {
+      method: 'POST',
+      body: fd
+    })
+      .then((res) => {
+        res.json().then(json => {
+          document.cookie = `access_token=${json.access_token};`
+          this.saveTabBtn.disabled = false
+          this._selectTab({ target: this.saveTabBtn })
+        })
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  _selectTab (event) {
+    const popover = event.currentTarbet.closest('#dhd-popover')
+    if (event.target.classList.contains('tab')) {
+      if (event.type) event.stopImmediatePropagation()
+      const tabs = Array.from(popover.querySelectorAll('.tab'))
+      tabs.forEach((tab) => {
+        tab.classList.toggle('active', tab === event.target)
+        popover.querySelector(`#${tab.dataset.content}`).classList.toggle('hidden', tab !== event.target)
+      })
+    }
+  }
+}
+
+const readCookie = (name) => {
+  const nameEQ = name + '='
+  const ca = document.cookie.split(';')
+  for (var c of ca) {
+    while (c.charAt(0) === ' ') c.substring(1, c.length)
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+  }
+  return null
+}
+
+const saveToDreamHouse = (request) => {
+  let titleOverride = null
+  let urlOverride = null
+  let customFields = {}
+
+  const processedPage = processPage(customFields)
+  customFields = processedPage.customFields
+  titleOverride = processedPage.titleOverride
+  urlOverride = processedPage.urlOverride || null
+
+  Object.assign(customFields, { url: request.info.srcUrl })
+
+  const pageContext = {
+    urlOverride: urlOverride,
+    titleOverride: titleOverride,
+    // closestId: closestId,
+    // page_dom: document.documentElement.outerHTML,
+    customFields: customFields
+  }
+
+  const backdrop = document.createElement('div')
+  backdrop.setAttribute('id', 'dhd-backdrop')
+  const popover = buildPopover()
+  const modal = new DreamHouseModal(popover)
+  backdrop.appendChild(popover)
+  document.body.appendChild(backdrop)
+  modal.updateContent(pageContext)
 }
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    // console.log(request.message);
-
+  function (request, sender, sendResponse) {
     // if (request.disconnect === true) {
     //   if (hasStoragePermission) {
     //     chrome.storage.local.clear()
@@ -237,227 +639,8 @@ chrome.runtime.onMessage.addListener(
     //   }
     // }
 
-    if (request.hasStoragePermission === true) {
-      hasStoragePermission = true
-      sendResponse({ack: true})
-    }
-
-    if (request.clearSelection === true) {
-      clearSelection()
-      sendResponse({ack: true})
-    }
-
-    if (request.message === "clicked_browser_action") {
-      const sel = window.getSelection()
-      const selectionText = sel.toString()
-
-      // console.log('selectionText', selectionText)
-      
-      let titleOverride = null
-      let urlOverride = null
-      let customFields = {} 
-      let closestId = ''
-      
-      if (sel && sel.rangeCount > 0) {
-        const selectionEl = sel.getRangeAt(0).startContainer.parentNode
-
-        if (selectionEl.id) {
-          closestId = selectionEl.id
-        }
-        else {
-          const prevSibling = $(selectionEl).prev('[id]')        
-          const prevParent = $(selectionEl).closest('[id]')
-
-          if (prevSibling.length > 0) {
-            closestId = prevSibling[0].id
-          }
-          else if (prevParent.length > 0) {
-            closestId = prevParent[0].id
-          }
-        }
-
-        if (closestId) {
-          urlOverride = `${location.href}#${closestId}`
-        }
-      }
-
-      // Index the DOM
-      getTopTermsInDoc()
-
-
-      // Youtube video
-      if (isYoutubeVideoPage()) {
-        const fields = youtubeFields()
-        Object.assign(customFields, fields)
-      
-        // TODO - replace an existing t parameter
-        if (location.search.includes('t=')) {
-          urlOverride = `${location.origin}${location.pathname}${location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
-        }
-        else {
-          urlOverride = `${location.href}&t=${timeStringToSeconds(fields.current_time)}`
-        }
-      }
-
-      // Netflix Video
-      if (isNetflixVideoPage()) {
-        const fields = netflixFields()
-        Object.assign(customFields, fields)
-      }
-
-      // Skillshare video
-      if (isSkillshareVideoPage()) {
-        const fields = skillShareFields()
-        Object.assign(customFields, fields)
-      }
-
-      // Linkedin Learning
-      if (isLinkedinLearningPage()) {
-        const fields = linkedinLearningFields()
-        Object.assign(customFields, fields)
-      }
-
-
-      // Kindle Cloud reader
-      if (isKindleCloudReaderPage()) {
-
-      }
-
-      // Page title
-      if ($('h1').length > 0) {
-        customFields.page_title = $('h1')[0].textContent.trim()
-      }
-
-      // edX
-      if (isEdxLecturePage()) {
-        Object.assign(customFields, edxLectureFields())
-      }
-
-      // if (isMedium)
-      // Kindle Notes and Highlights: https://read.amazon.com/notebook
-      // Go to the first book 
-      // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
-      // document in the first kindle iframe
-      // $('#KindleReaderIFrame').get(0).contentDocument
-      if (isKindleNotebookPage()) {
-
-        console.log('is kindle notebook page!')
-
-        titleOverride = $('h3').text()
-        customFields.page_title = $('h3').text()
-        customFields.book_title = $('h3').text()
-        customFields.book_author = $('p.kp-notebook-metadata')[1].innerText
-
-        let currRow
-
-        if (sel && sel.rangeCount > 0) {
-          const selectionEl = sel.getRangeAt(0).startContainer.parentNode
-
-          if (selectionEl.classList.contains('a-row')) {
-            currRow = selectionEl
-            // closestId = selectionEl.id
-          }
-          else {
-            const prevSibling = $(selectionEl).prev('.a-row')        
-            const prevParent = $(selectionEl).closest('.a-row')
-
-            if (prevSibling.length > 0) {
-              // closestId = prevSibling[0].id
-              currRow = prevSibling
-            }
-            else if (prevParent.length > 0) {
-              // closestId = prevParent[0].id
-              currRow = prevParent
-            }
-          }
-
-          console.log('currRow', currRow)
-          const prevRow = $(selectionEl).closest('.kp-notebook-row-separator')
-          console.log('prevRow', prevRow)
-
-
-          customFields.book_location = prevRow.find('#annotationHighlightHeader')[0].innerText
-
-        }
-      }
-
-
-      if (selectedElements.length > 0) {
-        
-        const selectedFields = parseSelectedElements()
-
-        customFields = {
-          ...customFields, 
-          ...selectedFields 
-        }
-      }
-
-      const pageContext = { 
-        pageContext: { 
-          urlOverride: urlOverride,
-          titleOverride: titleOverride,
-          selection: selectionText, 
-          // closestId: closestId,
-          // page_dom: document.documentElement.outerHTML,
-          customFields: customFields
-        }
-      };
-
-      // console.log('sending pageContext', pageContext, window.getSelection().toString())
-
-      chrome.runtime.sendMessage(pageContext, function(response) {
-      });
-    }
-
-    if (request.addSelection) {
-      selectingDOM = true
-
-      console.log('in addSelection in content script')
-      sendResponse({ack: true})
-
-      $(document).mousemove(function(e) {
-        var target = e.target;
-
-        // console.log('target', target)
-        const whiteListedNodes = ['DIV', 'IMG', 'A', 'P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5'] 
-
-        // if (whiteListedClasses && target.class)
-        // TODO - perhaps we should restrict what elements can be added? 
-        // do it by source
-
-        if (whiteListedNodes.includes(target.nodeName)) {
-          // For NPE checking, we check safely. We need to remove the class name
-          // Since we will be styling the new one after.
-          if (prevDOM != null && !selectedElements.includes(prevDOM)) {
-            prevDOM.classList.remove(MOUSE_VISITED_CLASSNAME);
-          }
-          // Add a visited class name to the element. So we can style it.
-          target.classList.add(MOUSE_VISITED_CLASSNAME);
-          // The current element is now the previous. So we can remove the class
-          // during the next iteration.
-          prevDOM = target;
-        }
-      })
-    }
-
-    if (request.cancelSelection) {
-      selectingDOM = false
-      $(document).unbind('mousemove')
+    if (request.message === 'save_to_dream_house') {
+      saveToDreamHouse(request)
     }
   }
-);
-
-
-$(function() {
-  $(document).click(function(e) {
-    if (selectingDOM) {
-      if (hasStoragePermission) {
-        let element = e.target
-
-        if (selectedElements && selectedElements.includes(element.outerHTML)) return
-
-        selectedElements.push(element)
-      }
-    }
-  }) 
-})
+)
