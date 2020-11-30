@@ -137,11 +137,11 @@
 #dhd-popover .save-btn-container {
   background-color: #fff;
   bottom: 0;
-  left: 1em;
   padding-bottom: 1em;
   padding-top: 1em;
   position: fixed;
   right: 1em;
+  width: calc(350px - 2em);
 }
 
 #dhd-popover .tabs {
@@ -222,10 +222,39 @@
   margin: 1em;
 }
 
+#dhd-popover .overlay {
+  align-items: start;
+  display: grid;
+  grid-template-columns: 1fr 350px;
+}
+#dhd-popover #thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 200px);
+  grid-gap: 2rem;
+  min-width: 800px;
+}
 #dhd-popover #thumbnail:empty {
   display: none;
 }
 #dhd-popover .thumbnail {
   display: block;
   width: 100%;
+}
+#dhd-popover #thumbnails {
+  padding: 1rem 0 1rem 1rem;
+}
+#dhd-popover #thumbnails input {
+  display: none;
+}
+#dhd-popover input:checked + label > img {
+  border: solid 1px #709bcc;
+  box-shadow:
+    0 2.8px 2.2px rgba(0, 0, 0, 0.062),
+    0 6.7px 5.3px rgba(0, 0, 0, 0.089),
+    0 12.5px 10px rgba(0, 0, 0, 0.11),
+    0 22.3px 17.9px rgba(0, 0, 0, 0.131),
+    0 41.8px 33.4px rgba(0, 0, 0, 0.158),
+    0 100px 80px rgba(0, 0, 0, 0.22)
+    ;
+  filter: saturate(1.5);
 }

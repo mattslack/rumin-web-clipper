@@ -364,19 +364,22 @@ chrome.runtime.onMessage.addListener(
         Object.assign(customFields, { url: request.info.srcUrl })
       }
 
+      const images = Array.from(document.querySelectorAll('img'))
+        .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
+        .map(image => image.src)
       const pageContext = {
         pageContext: {
           urlOverride: urlOverride,
           titleOverride: titleOverride,
           // closestId: closestId,
           // page_dom: document.documentElement.outerHTML,
-          customFields: customFields
+          customFields: customFields,
+          images: images
         }
       }
 
       // console.log('sending pageContext', pageContext, window.getSelection().toString())
 
-      document.body.insertAdjacentHTML('beforeend', '<div style="background: rgba(0,0,0,0.7); bottom: 0; left: 0; position: fixed; right: 0; top: 0; z-index: 100;">Overlay</div>');
       chrome.runtime.sendMessage(pageContext, function (response) {
       })
     }

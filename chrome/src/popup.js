@@ -29,6 +29,7 @@
       source_url: pageUrl,
       notes: notes || ''
     }, customFields)
+    params.url = document.querySelector('input[name=url]:checked').value
 
     return params
   }
@@ -56,12 +57,17 @@
 
   chrome.runtime.onMessage.addListener(function (req, sender, sendResponse) {
     if (req.pageContext) {
-      const renderPreview = function (src) {
-        const previewWrapper = document.querySelector('#thumbnail')
+      const renderPreviews = function () {
+        const previewWrapper = document.querySelector('#thumbnails')
         while (previewWrapper.firstElementChild) {
           previewWrapper.firstElementChild.remove()
         }
-        previewWrapper.insertAdjacentHTML('afterbegin', `<img src="${src}" alt="" class="thumbnail">`)
+        req.pageContext.images.forEach((image, index) => {
+          previewWrapper.insertAdjacentHTML('afterbegin', `
+            <input type="radio" form="save_tab" id="image_${index}" name="url" value="${image}">
+            <label for="image_${index}"><img src="${image}" alt="" class="thumbnail"></label>
+          `)
+        })
       }
       const titleField = popover.querySelector('#captured_title_field')
 
@@ -91,8 +97,8 @@
         if (customFields.page_title !== undefined && customFields.page_title === title) {
           delete customFields.page_title
         }
+        renderPreviews()
         if (customFields.url !== undefined) {
-          renderPreview(customFields.url)
           popover.querySelector('#save_btn').disabled = false
         }
         const customFieldElements = Object.keys(customFields).map(fieldName => {
@@ -108,9 +114,10 @@
   })
 
   const onSave = (event) => {
+    event.preventDefault()
     const saveButton = event.currentTarget
     // disable button
-    saveButton.innerHTML('<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>')
+    saveButton.innerHTML = '<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>'
     saveButton.setAttribute('class', '')
 
     const url = `${apiHost}/api/clipboard`
@@ -171,12 +178,13 @@
     }
   }
 
-  console.log(popover)
   popover.querySelector('#save_btn').addEventListener('click', onSave)
   popover.querySelector('#sign-in-form').addEventListener('submit', onSignIn)
 
   const signInTabBtn = popover.querySelector('#lookup_tab_btn')
   const saveTabBtn = popover.querySelector('#save_tab_btn')
+
+  Array.from(document.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', selectTab))
 
   if (readCookie('access_token') === null) {
     selectTab({ target: signInTabBtn })
