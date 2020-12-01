@@ -12,7 +12,7 @@
       "matches": [
         "*://*/*"
       ],
-      "js": ["content.js"],
+      "js": ["dhdmodal.js", "content.js"],
       "css": ["css/popup.css"]
     }
   ],
