@@ -354,7 +354,7 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ message: 'token_saved', token: request.token.access_token })
       })
     }
-    if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
+    if (request.message === 'clicked_browser_action') {
       // console.log('selectionText', selectionText)
       chrome.storage.local.get(['token'], (item) => {
         const token = item.token
@@ -366,10 +366,6 @@ chrome.runtime.onMessage.addListener(
         customFields = processedPage.customFields
         titleOverride = processedPage.titleOverride
         urlOverride = processedPage.urlOverride || null
-
-        if (request.message === 'save_to_dream_house') {
-          Object.assign(customFields, { url: request.info.srcUrl })
-        }
 
         const images = Array.from(document.querySelectorAll('img'))
           .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)

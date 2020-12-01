@@ -2,7 +2,7 @@
   "name": "Dream House",
   "version": "0.0.0.21",
   "description": "",
-  "permissions": ["activeTab", "contextMenus", "storage"],
+  "permissions": ["activeTab", "storage"],
   "optional_permissions": [],
   "background": {
     "scripts": ["background.js"]

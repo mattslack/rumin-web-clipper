@@ -17,13 +17,3 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     sendMsgToContentScript({ message: 'clicked_browser_action' })
   }
 })
-
-const onSaveToDreamHouse = (info, tab) => {
-  sendMsgToContentScript({ message: 'save_to_dream_house', info: info, tab: tab })
-}
-
-chrome.contextMenus.onClicked.addListener(onSaveToDreamHouse)
-chrome.contextMenus.create({
-  contexts: ['image'],
-  title: 'Save to DreamHouse'
-})
