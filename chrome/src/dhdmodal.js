@@ -121,6 +121,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     `)
     this.backdrop.appendChild(popover)
     document.body.appendChild(this.backdrop)
+    document.body.style.setProperty('overflow', 'hidden')
     popover.querySelector('#save_btn').addEventListener('click', (event) => this.onSave(event))
     popover.querySelector('#sign-in-form').addEventListener('submit', (event) => this.onSignIn(event))
 
@@ -150,6 +151,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   destroy () {
     this.backdrop.remove()
+    document.body.style.removeProperty('overflow')
   }
 
   onSave (event) {

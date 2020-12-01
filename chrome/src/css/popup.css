@@ -21,7 +21,7 @@
   margin: 0;
   max-height: 90vh;
   width: 80vw;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   text-align: left;
 }
@@ -147,6 +147,7 @@
   overflow: visible;
   overflow-y: scroll;
   padding-bottom: 4.25rem;
+  padding-right: 1em;
 }
 
 #dhd-popover .save-btn-container {
@@ -192,7 +193,7 @@
 
 #dhd-popover .section-container,
 #dhd-popover .capture-container {
-  padding: 1em;
+  padding: 1em 0 1em 1em;
   width: 350px;
 }
 
@@ -240,12 +241,18 @@
 #dhd-popover .overlay {
   align-items: start;
   display: grid;
+  grid-gap: 2rem;
   grid-template-columns: 1fr 350px;
 }
 #dhd-popover #thumbnails {
+  align-items: center;
   display: grid;
-  grid-template-columns: repeat(auto-fit, 200px);
+  grid-template-columns: 1fr;
   grid-gap: 2rem;
+  justify-content: center;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem 0 1rem 1rem;
 }
 #dhd-popover #thumbnail:empty {
   display: none;
@@ -253,9 +260,6 @@
 #dhd-popover .thumbnail {
   display: block;
   width: 100%;
-}
-#dhd-popover #thumbnails {
-  padding: 1rem 0 1rem 1rem;
 }
 #dhd-popover #thumbnails input {
   display: none;
@@ -271,4 +275,20 @@
     0 100px 80px rgba(0, 0, 0, 0.22)
     ;
   filter: saturate(1.5);
+}
+
+@media screen and (min-width: 64rem) {
+  #dhd-popover #thumbnails {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media screen and (min-width: 80rem) {
+  #dhd-popover #thumbnails {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media screen and (min-width: 90rem) {
+  #dhd-popover {
+    max-width: 72rem;
+  }
 }
