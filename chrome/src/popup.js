@@ -1,5 +1,6 @@
 /* global FormData, chrome, fetch */
 (function () {
+  let token
   let title
   let pageUrl
   let customFields = {}
@@ -7,16 +8,6 @@
   if (popover === null) return
 
   const apiHost = 'https://api.dreamhousedesign.com'
-
-  const readCookie = (name) => {
-    const nameEQ = name + '='
-    const ca = document.cookie.split(';')
-    for (var c of ca) {
-      while (c.charAt(0) === ' ') c.cubstring(1, c.length)
-      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
-    }
-    return null
-  }
 
   function activityData () {
     title = popover.querySelector('#captured_title_field')
@@ -48,14 +39,27 @@
   }
 
   function sendMsgToContentScript (msg) {
+    console.log(msg)
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, msg, function (response) {})
+      chrome.tabs.sendMessage(tabs[0].id, msg, function (response) {
+        if (response && response.message === 'token_saved') {
+          saveTabBtn.disabled = false
+          selectTab({ target: saveTabBtn })
+          token = response.token
+        }
+      })
     })
   }
 
   chrome.runtime.sendMessage({ popupOpen: true })
 
   chrome.runtime.onMessage.addListener(function (req, sender, sendResponse) {
+    if (req.token === undefined) {
+      selectTab({ target: signInTabBtn })
+      saveTabBtn.disabled = true
+    } else {
+      token = req.token
+    }
     if (req.pageContext) {
       const renderPreviews = function () {
         const previewWrapper = document.querySelector('#thumbnails')
@@ -111,6 +115,7 @@
           </div>`
       }
     }
+    sendResponse()
   })
 
   const onSave = (event) => {
@@ -128,7 +133,7 @@
         method: 'POST',
         body: JSON.stringify(data),
         headers: {
-          Authorization: `Bearer ${readCookie('access_token')}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -157,9 +162,8 @@
     })
       .then((res) => {
         res.json().then(json => {
-          document.cookie = `access_token=${json.access_token};`
-          saveTabBtn.disabled = false
-          selectTab({ target: saveTabBtn })
+          console.log(json)
+          sendMsgToContentScript({ message: 'save_session', token: json })
         })
       })
       .catch((error) => {
@@ -185,9 +189,4 @@
   const saveTabBtn = popover.querySelector('#save_tab_btn')
 
   Array.from(document.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', selectTab))
-
-  if (readCookie('access_token') === null) {
-    selectTab({ target: signInTabBtn })
-    saveTabBtn.disabled = true
-  }
 })()

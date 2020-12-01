@@ -339,6 +339,7 @@ const processPage = (customFields) => {
 
 chrome.runtime.onMessage.addListener(
   function (request, sender, sendResponse) {
+    console.log(request, sender, sendResponse)
     // console.log(request.message);
 
     // if (request.disconnect === true) {
@@ -348,40 +349,50 @@ chrome.runtime.onMessage.addListener(
     //   }
     // }
 
-    if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
-      // console.log('selectionText', selectionText)
-
-      let titleOverride = null
-      let urlOverride = null
-      let customFields = {}
-
-      const processedPage = processPage(customFields)
-      customFields = processedPage.customFields
-      titleOverride = processedPage.titleOverride
-      urlOverride = processedPage.urlOverride || null
-
-      if (request.message === 'save_to_dream_house') {
-        Object.assign(customFields, { url: request.info.srcUrl })
-      }
-
-      const images = Array.from(document.querySelectorAll('img'))
-        .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
-        .map(image => image.src)
-      const pageContext = {
-        pageContext: {
-          urlOverride: urlOverride,
-          titleOverride: titleOverride,
-          // closestId: closestId,
-          // page_dom: document.documentElement.outerHTML,
-          customFields: customFields,
-          images: images
-        }
-      }
-
-      // console.log('sending pageContext', pageContext, window.getSelection().toString())
-
-      chrome.runtime.sendMessage(pageContext, function (response) {
+    if (request.message === 'save_session' && request.token) {
+      chrome.storage.local.set({ token: request.token.access_token }, () => {
+        sendResponse({ message: 'token_saved', token: request.token.access_token })
       })
     }
+    if (request.message === 'save_to_dream_house' || request.message === 'clicked_browser_action') {
+      // console.log('selectionText', selectionText)
+      chrome.storage.local.get(['token'], (item) => {
+        const token = item.token
+        let titleOverride = null
+        let urlOverride = null
+        let customFields = {}
+
+        const processedPage = processPage(customFields)
+        customFields = processedPage.customFields
+        titleOverride = processedPage.titleOverride
+        urlOverride = processedPage.urlOverride || null
+
+        if (request.message === 'save_to_dream_house') {
+          Object.assign(customFields, { url: request.info.srcUrl })
+        }
+
+        const images = Array.from(document.querySelectorAll('img'))
+          .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
+          .map(image => image.src)
+
+        const pageContext = {
+          token: token,
+          pageContext: {
+            urlOverride: urlOverride,
+            titleOverride: titleOverride,
+            // closestId: closestId,
+            // page_dom: document.documentElement.outerHTML,
+            customFields: customFields,
+            images: images
+          }
+        }
+
+        // console.log('sending pageContext', pageContext, window.getSelection().toString())
+
+        chrome.runtime.sendMessage(pageContext, function (response) { })
+      })
+    }
+    // It's polite to send a response so the listener stops expecting one
+    sendResponse()
   }
 )
