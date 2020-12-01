@@ -17,3 +17,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     sendMsgToContentScript({ message: 'clicked_browser_action' })
   }
 })
+
+chrome.browserAction.onClicked.addListener(() => {
+  sendMsgToContentScript({ message: 'clicked_browser_action' })
+})
