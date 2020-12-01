@@ -7,6 +7,7 @@
 //   o.observe(el)
 // }
 
+let dhdmodal
 // parse '(hh):mm:ss' string into seconds
 const timeStringToSeconds = (str) => {
   return str.split(':').reverse().reduce((prev, curr, i) => prev + curr * Math.pow(60, i), 0)
@@ -341,6 +342,7 @@ const openModal = (pageContext) => {
   const popover = new DHDModal(pageContext)
   popover.build()
   popover.populate()
+  return popover
 }
 
 chrome.runtime.onMessage.addListener(
@@ -360,37 +362,42 @@ chrome.runtime.onMessage.addListener(
       })
     }
     if (request.message === 'clicked_browser_action') {
-      chrome.storage.local.get(['token'], (item) => {
-        const token = item.token
-        let titleOverride = null
-        let urlOverride = null
-        let customFields = {}
+      if (dhdmodal !== undefined) {
+        dhdmodal.destroy()
+        dhdmodal = undefined
+      } else {
+        chrome.storage.local.get(['token'], (item) => {
+          const token = item.token
+          let titleOverride = null
+          let urlOverride = null
+          let customFields = {}
 
-        const processedPage = processPage(customFields)
-        customFields = processedPage.customFields
-        titleOverride = processedPage.titleOverride
-        urlOverride = processedPage.urlOverride || null
+          const processedPage = processPage(customFields)
+          customFields = processedPage.customFields
+          titleOverride = processedPage.titleOverride
+          urlOverride = processedPage.urlOverride || null
 
-        const images = Array.from(document.querySelectorAll('img'))
-          .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
-          .map(image => image.src)
+          const images = Array.from(document.querySelectorAll('img'))
+            .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
+            .map(image => image.src)
 
-        const pageContext = {
-          token: token,
-          urlOverride: urlOverride,
-          titleOverride: titleOverride,
-          // closestId: closestId,
-          // page_dom: document.documentElement.outerHTML,
-          customFields: customFields,
-          images: images
-        }
+          const pageContext = {
+            token: token,
+            urlOverride: urlOverride,
+            titleOverride: titleOverride,
+            // closestId: closestId,
+            // page_dom: document.documentElement.outerHTML,
+            customFields: customFields,
+            images: images
+          }
 
-        // console.log('sending pageContext', pageContext, window.getSelection().toString())
+          // console.log('sending pageContext', pageContext, window.getSelection().toString())
 
-        // chrome.runtime.sendMessage(pageContext, function (response) { })
-        console.log(pageContext)
-        openModal(pageContext)
-      })
+          // chrome.runtime.sendMessage(pageContext, function (response) { })
+          console.log(pageContext)
+          dhdmodal = openModal(pageContext)
+        })
+      }
     }
     // It's polite to send a response so the listener stops expecting one
     sendResponse()
