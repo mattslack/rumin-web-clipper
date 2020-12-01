@@ -133,6 +133,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.onSelectTab({ target: this.signInTabBtn })
       this.saveTabBtn.disabled = true
     }
+    document.addEventListener('keydown', (event) => this.onKeydown(event))
     this.popover = popover
   }
 
@@ -152,6 +153,13 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   destroy () {
     this.backdrop.remove()
     document.body.style.removeProperty('overflow')
+  }
+
+  onKeydown (event) {
+    if (event.key === 'Escape') {
+      document.removeEventListener('keydown', (event) => this.onKeydown(event))
+      this.destroy()
+    }
   }
 
   onSave (event) {

@@ -332,6 +332,13 @@
     }
   }
 
+  const closeModal = () => {
+    if (dhdmodal !== undefined) {
+      dhdmodal.destroy()
+      dhdmodal = undefined
+    }
+  }
+
   const openModal = (pageContext) => {
     const popover = new DHDModal(pageContext)
     popover.build()
@@ -355,11 +362,11 @@
           sendResponse({ message: 'token_saved', token: request.token.access_token })
         })
       }
+      if (request.message === 'close_modal') {
+        closeModal()
+      }
       if (request.message === 'clicked_browser_action') {
-        if (dhdmodal !== undefined) {
-          dhdmodal.destroy()
-          dhdmodal = undefined
-        } else {
+        if (dhdmodal === undefined || document.querySelector('#dhd-popover') === null) {
           chrome.storage.local.get(['token'], (item) => {
             const token = item.token
             let titleOverride = null
@@ -390,6 +397,8 @@
             // chrome.runtime.sendMessage(pageContext, function (response) { })
             dhdmodal = openModal(pageContext)
           })
+        } else {
+          closeModal()
         }
       }
       // It's polite to send a response so the listener stops expecting one
