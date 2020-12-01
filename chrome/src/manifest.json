@@ -13,7 +13,7 @@
         "*://*/*"
       ],
       "js": ["content.js"],
-      "css": ["css/content.css", "css/popup.css"]
+      "css": ["css/popup.css"]
     }
   ],
   "browser_action": {
