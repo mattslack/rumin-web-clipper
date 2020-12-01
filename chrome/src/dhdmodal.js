@@ -128,13 +128,13 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
     this.saveTabBtn = popover.querySelector('#save_tab_btn')
 
-    Array.from(document.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', (event) => this.onSelectTab(event)))
+    this.popover = popover
+    Array.from(this.popover.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', (event) => this.onSelectTab(event)))
     if (this.token === undefined) {
       this.onSelectTab({ target: this.signInTabBtn })
       this.saveTabBtn.disabled = true
     }
     document.addEventListener('keydown', (event) => this.onKeydown(event))
-    this.popover = popover
   }
 
   buildCustomField (name, value) {
@@ -163,6 +163,9 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
   }
 
+  disable () {
+  }
+
   onSave (event) {
     event.preventDefault()
     const saveButton = event.currentTarget
@@ -172,6 +175,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const url = `${this.apiHost}/api/clipboard`
     const data = this.activityData
 
+    console.log('onSave token:', this.token)
     const saveMe = () => {
       fetch(url, {
         method: 'POST',
@@ -217,16 +221,24 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       method: 'POST',
       body: fd
     })
-      .then((res) => {
-        res.json().then(json => {
-          const token = json.access_token
-          console.log(token)
-          chrome.storage.local.set({ token: token }, () => {
-            this.saveTabBtn.disabled = false
-            this.onSelectTab({ target: this.saveTabBtn })
-            this.token = token
+      .then((response) => {
+        if (response.status === 201 || response.status === 200) {
+          response.json().then(json => {
+            const token = json.access_token
+            console.log('received token:', token)
+            chrome.storage.local.set({ token: token }, () => {
+              this.saveTabBtn.disabled = false
+              this.onSelectTab({ target: this.saveTabBtn })
+              this.token = token
+              console.log('saved token:', this.token)
+              this.popover.querySelector('#save_tab').insertAdjacentHTML('afterbegin', '<div class="dhd-success"><p>You’re signed in.</p></div>')
+              this.popover.querySelector('#sign-in-form').reset()
+            })
           })
-        })
+        }
+        if (response.status === 401) {
+          this.popover.querySelector('#lookup_tab .form-group').insertAdjacentHTML('afterend', '<div class="dhd-error"><p>Sorry, we couldn’t sign you in with that email and password.</p></div>')
+        }
       })
       .catch((error) => {
         console.log(error)
@@ -280,11 +292,15 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     while (previewWrapper.firstElementChild) {
       previewWrapper.firstElementChild.remove()
     }
+    if (this.pageContext.images.length < 1) {
+      this.disable()
+    }
     this.pageContext.images.forEach((image, index) => {
       previewWrapper.insertAdjacentHTML('afterbegin', `
         <input type="radio" form="save_tab" id="image_${index}" name="url" value="${image}">
         <label for="image_${index}"><img src="${image}" alt="" class="thumbnail"></label>
       `)
     })
+    this.popover.querySelector('#image_0').checked = true
   }
 }

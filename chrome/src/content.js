@@ -369,6 +369,7 @@
         if (dhdmodal === undefined || document.querySelector('#dhd-popover') === null) {
           chrome.storage.local.get(['token'], (item) => {
             const token = item.token
+            console.log('stored token:', token)
             let titleOverride = null
             let urlOverride = null
             let customFields = {}
