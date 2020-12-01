@@ -244,6 +244,11 @@
   grid-gap: 2rem;
   grid-template-columns: 1fr 350px;
 }
+#dhd-popover .dhd-success {
+  background: #cfc;
+  border: solid 1px #191;
+  padding: 1rem;
+}
 #dhd-popover #thumbnails {
   align-items: center;
   display: grid;

@@ -151,6 +151,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   }
 
   destroy () {
+    window.clearTimeout(this.closeOut)
     this.backdrop.remove()
     document.body.style.removeProperty('overflow')
   }
@@ -165,9 +166,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   onSave (event) {
     event.preventDefault()
     const saveButton = event.currentTarget
-    // disable button
-    saveButton.innerHTML = '<div style="width: 100%; text-align: center"><img src="images/spinner.webp" width="32" height="32" style="margin: auto; display: block" /><p><small>Saving...Do not close this</small></p></div>'
-    saveButton.setAttribute('class', '')
+    saveButton.innerHTML = '<div style="width: 100%; text-align: center"><img width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>'
+    saveButton.disabled = true
 
     const url = `${this.apiHost}/api/clipboard`
     const data = this.activityData
@@ -183,7 +183,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       })
         .then((response) => {
           if (response.status === 201) {
-            this.popover.querySelector('.capture-container').innerHTML = '<p>The content is successfully saved.</p>'
+            this.popover.innerHTML = '<div class="dhd-success"><p>The content is successfully saved.</p></div>'
+            this.closeOut = window.setTimeout(() => { this.destroy() }, 3000)
           } else if (response.status === 401) {
             this.popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
           } else {
