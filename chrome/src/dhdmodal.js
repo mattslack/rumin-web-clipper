@@ -95,10 +95,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
               </div>
             </div>
             <div class="save-btn-container">
-              <button type="submit" disabled="disabled" id="save_btn"
-                   class="btn btn-primary form-control">
-                Save
-              </button>
             </div>
           </form>
           <div id="lookup_tab" class="section-container hidden">
@@ -122,7 +118,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.backdrop.appendChild(popover)
     document.body.appendChild(this.backdrop)
     document.body.style.setProperty('overflow', 'hidden')
-    popover.querySelector('#save_btn').addEventListener('click', (event) => this.onSave(event))
     popover.querySelector('#sign-in-form').addEventListener('submit', (event) => this.onSignIn(event))
 
     this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
@@ -132,7 +127,9 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     Array.from(this.popover.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', (event) => this.onSelectTab(event)))
     if (this.token === undefined) {
       this.onSelectTab({ target: this.signInTabBtn })
-      this.saveTabBtn.disabled = true
+      this.disableSave()
+    } else {
+      this.enableSave()
     }
     document.addEventListener('keydown', (event) => this.onKeydown(event))
   }
@@ -156,14 +153,41 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     document.body.style.removeProperty('overflow')
   }
 
+  disableSave () {
+    this.popover.querySelector('#save_btn').removeEventListener('click', (event) => this.onSave(event))
+  }
+
+  enableSave () {
+    const popover = this.popover
+    const saveButtonContainer = popover.querySelector('.save_btn_container')
+    if (saveButtonContainer) {
+      while (saveButtonContainer.firstChild) {
+        saveButtonContainer.firstChild.empty()
+      }
+      saveButtonContainer.insertAdjacentHTML(`
+        <button type="submit" id="save_btn"
+             class="btn btn-primary form-control">
+          Save
+        </button>
+      `)
+      popover.querySelector('#save_btn').addEventListener('click', (event) => this.onSave(event))
+    }
+  }
+
+  onExpired () {
+    this.popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please <button type="button" class="btn btn--text">sign in again</button>.</p>'
+    window.requestAnimationFrame(() => {
+      this.popover.querySelector('.save-btn-container button').addEventListener('click', () => {
+        this.onSelectTab({ target: this.signInTabBtn })
+      })
+    })
+  }
+
   onKeydown (event) {
     if (event.key === 'Escape') {
       document.removeEventListener('keydown', (event) => this.onKeydown(event))
       this.destroy()
     }
-  }
-
-  disable () {
   }
 
   onSave (event) {
@@ -190,7 +214,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
             this.popover.innerHTML = '<div class="dhd-success"><p>The content is successfully saved.</p></div>'
             this.closeOut = window.setTimeout(() => { this.destroy() }, 3000)
           } else if (response.status === 401) {
-            this.popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please sign in again.</p>'
+            this.onExpired()
           } else {
             this.popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
           }
@@ -227,7 +251,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
             const token = json.access_token
             console.log('received token:', token)
             chrome.storage.local.set({ token: token }, () => {
-              this.saveTabBtn.disabled = false
+              this.enableSave()
               this.onSelectTab({ target: this.saveTabBtn })
               this.token = token
               console.log('saved token:', this.token)
