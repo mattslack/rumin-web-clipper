@@ -2,94 +2,6 @@
 
 (function () {
   let dhdmodal
-  // parse '(hh):mm:ss' string into seconds
-  const timeStringToSeconds = (str) => {
-    return str.split(':').reverse().reduce((prev, curr, i) => prev + curr * Math.pow(60, i), 0)
-  }
-
-  const youtubeFields = () => {
-    const currentTime = document.querySelector('.ytp-time-current').textContent
-    const channelName = document.querySelector('.ytd-channel-name yt-formatted-string').textContent
-    const channelUrl = document.querySelector('.ytd-channel-name yt-formatted-string a').href
-    const publishedDate = document.querySelector('#date yt-formatted-string.ytd-video-primary-info-renderer').textContent.replace('Premiered ', '') // FIXME - this can break for other languages
-
-    return ({
-      current_time: currentTime,
-      channel_name: channelName,
-      channel_url: channelUrl,
-      published_date: publishedDate
-    })
-  }
-
-  const linkedinLearningFields = () => {
-    const classTitle = document.querySelector('.classroom-nav__details h1').textContent
-    const currentTime = document.querySelector('.vjs-current-time').textContent
-    const teacherName = document.querySelector('.authors-entity__name-text').textContent.trim().split('\n')[0]
-    const teacherUrl = document.querySelector('a.course-author-entity__lockup').getAttribute('href')
-    const sessionTitle = document.querySelector('.classroom-toc-item--selected').textContent
-    const sessionTranscript = document.querySelector('.transcripts-component__sections').textContent.trim()
-
-    return ({
-      class_title: classTitle.trim(),
-      current_time: currentTime,
-      teacher_name: teacherName.trim(),
-      teacher_url: teacherUrl,
-      session_title: sessionTitle.trim(),
-      session_transcript: sessionTranscript
-    })
-  }
-
-  const skillShareFields = () => {
-    const classTitle = document.querySelector('.class-details-header-name').textContent
-    const currentTime = document.querySelector('.vjs-current-time-display').textContent
-    const teacherName = document.querySelector('.class-details-header-teacher-link').textContent
-    const teacherUrl = document.querySelector('.class-details-header-teacher-link').getAttribute('href')
-    const sessionTitle = document.querySelector('.session-item.active .session-item-title').textContent
-
-    return ({
-      class_title: classTitle.trim(),
-      current_time: currentTime,
-      teacher_name: teacherName.trim(),
-      teacher_url: teacherUrl,
-      session_title: sessionTitle.trim()
-    })
-  }
-
-  const netflixFields = () => {
-    const videoTitle = document.querySelector('.video-title h4').textContent
-    const episodeTitle = document.querySelector('.video-title span').textContent
-    const currentTime = document.querySelector('.scrubber-head').getAttribute('aria-valuetext')
-
-    return ({
-      video_title: videoTitle,
-      episode_title: episodeTitle,
-      current_time: currentTime
-    })
-  }
-
-  const edxLectureFields = () => {
-    const provider = document.querySelector('.course-header .provider').textContent
-    const courseCode = document.querySelector('.course-header .course-number').textContent
-    const courseName = document.querySelector('.course-header .course-name').textContent
-
-    let videoUrl = document.querySelectorAll('.video-sources')
-    videoUrl = videoUrl.length > 0 ? videoUrl[0].href : null
-
-    let slidesUrl = document.querySelectorAll('a[href$=pdf]')
-    slidesUrl = slidesUrl.length > 0 ? slidesUrl[0].href : null
-
-    let vidTime = document.querySelectorAll('.vidtime')
-    vidTime = vidTime.length > 0 ? vidTime.textContent.split('/')[0].trim() : null
-
-    return ({
-      course_provider: provider,
-      course_code: courseCode,
-      course_name: courseName,
-      video_url: videoUrl,
-      slides_url: slidesUrl,
-      current_time: vidTime
-    })
-  }
 
   const archDailyFields = () => {
     let copyright
@@ -204,34 +116,6 @@
     })
   }
 
-  const isLinkedinLearningPage = () => {
-    return window.location.href.startsWith('https://www.linkedin.com/learning/') && document.querySelectorAll('.classroom-layout__content').length > 0
-  }
-
-  const isSkillshareVideoPage = () => {
-    return window.location.href.startsWith('https://www.skillshare.com/classes/')
-  }
-
-  const isNetflixVideoPage = () => {
-    return window.location.href.startsWith('https://www.netflix.com/watch/')
-  }
-
-  const isYoutubeVideoPage = () => {
-    return window.location.href.startsWith('https://www.youtube.com/watch?v=')
-  }
-
-  const isKindleCloudReaderPage = () => {
-    return window.location.href.startsWith('https://read.amazon.com') && !window.location.href.includes('notebook')
-  }
-
-  const isKindleNotebookPage = () => {
-    return window.location.href.startsWith('https://read.amazon.com/notebook')
-  }
-
-  const isEdxLecturePage = () => {
-    return window.location.href.startsWith('https://courses.edx.org/courses/') && window.location.href.includes('courseware')
-  }
-
   const isArchDailyPage = () => {
     return /archdaily.com(\.(br|cl|mx|cn))?$/.test(window.location.hostname) && /^\/((br|cl|mx|cn)\/)?\d+\//.test(window.location.pathname)
   }
@@ -246,41 +130,6 @@
 
   const processPage = (customFields) => {
     let titleOverride = null
-    let urlOverride = null
-    // Youtube video
-    if (isYoutubeVideoPage()) {
-      const fields = youtubeFields()
-      Object.assign(customFields, fields)
-
-      // TODO - replace an existing parameter
-      if (window.location.search.includes('t=')) {
-        urlOverride = `${window.location.origin}${window.location.pathname}${window.location.search.replace(/t=[0-9]+s/, 't=' + timeStringToSeconds(fields.current_time) + 's')}`
-      } else {
-        urlOverride = `${window.location.href}&t=${timeStringToSeconds(fields.current_time)}`
-      }
-    }
-
-    // Netflix Video
-    if (isNetflixVideoPage()) {
-      const fields = netflixFields()
-      Object.assign(customFields, fields)
-    }
-
-    // Skillshare video
-    if (isSkillshareVideoPage()) {
-      const fields = skillShareFields()
-      Object.assign(customFields, fields)
-    }
-
-    // Linkedin Learning
-    if (isLinkedinLearningPage()) {
-      const fields = linkedinLearningFields()
-      Object.assign(customFields, fields)
-    }
-
-    // Kindle Cloud reader
-    if (isKindleCloudReaderPage()) {
-    }
 
     // Arch Daily
     if (isArchDailyPage()) {
@@ -306,29 +155,9 @@
       customFields.page_title = h1[0].textContent.trim()
     }
 
-    // edX
-    if (isEdxLecturePage()) {
-      Object.assign(customFields, edxLectureFields())
-    }
-
-    // if (isMedium)
-    // Kindle Notes and Highlights: https://read.amazon.com/notebook
-    // Go to the first book
-    // $('.kp-notebook-library-each-book a.a-link-normal')[0].click()
-    // document in the first kindle iframe
-    // $('#KindleReaderIFrame').get(0).contentDocument
-    if (isKindleNotebookPage()) {
-      console.log('is kindle notebook page!')
-
-      titleOverride = document.querySelector('h3').textContent
-      customFields.page_title = titleOverride
-      customFields.book_title = titleOverride
-      customFields.book_author = document.querySelectorAll('p.kp-notebook-metadata')[1].textContent
-    }
     return {
       customFields: customFields,
-      titleOverride: titleOverride,
-      urlOverride: urlOverride
+      titleOverride: titleOverride
     }
   }
 
