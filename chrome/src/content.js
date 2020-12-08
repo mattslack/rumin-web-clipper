@@ -4,7 +4,6 @@
   let dhdmodal
 
   const archDailyFields = (fields) => {
-    let copyright
     const images = []
     let description = document.querySelector('.afd-gal-description')
     description = description === null ? '' : description.textContent
@@ -13,33 +12,35 @@
     const topics = []
 
     const processImage = (image) => {
+      image = image.el
       const galleryFigure = image.closest('.afd-gal-figure')
       if (galleryFigure) {
         const alt = image.getAttribute('alt')
         let copyright
         if (/©/.test(alt)) {
           copyright = parseCopyright(alt)
+          images.push(Object.assign(image, { topics: [copyright] }))
+        } else {
+          images.pus(image)
         }
-        images.push(Object.assign(image, { copyright: copyright }))
       } else {
         const figure = image.closest('.featured-image, .media-picture')
         let caption
         if (figure) {
           caption = figure.querySelector('figcaption')
           caption = caption === null ? '' : caption.textContent
-          images.push(Object.assign(image, { copyright: parseCopyright(caption) }))
+          images.push(Object.assign(image, { topics: [parseCopyright(caption)] }))
         }
       }
     }
 
-    const parseCopyright = (string) => {
-      copyright = copyright.textContent
+    const parseCopyright = (copyright) => {
       const copyrightPattern = new RegExp('(©)(.*)', 'i')
       const copyrightMatch = copyrightPattern.exec(copyright)
       if (copyrightMatch && copyrightMatch.length >= 2) {
         copyright = copyrightMatch[2]
       }
-      return copyright
+      return { topic: 'Copyright Holder', value: copyright }
     }
 
     for (const item of specItems) {

@@ -22,12 +22,22 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     if (title !== null) title = title.value
     if (notes !== null) notes = notes.value
 
+    const selectedImage = document.querySelector('input[name=url]:checked')
+    const url = selectedImage.labels[0].querySelector('img').getAttribute('src')
+    const selectedImageFields = this.images[selectedImage.value]
+    delete selectedImageFields.el
+
+    if (selectedImageFields.topics) {
+      this.customFields.topics = Object.assign(this.customFields.topics, selectedImageFields.topics)
+    }
+
     const params = Object.assign({}, {
       title: title,
       source_url: this.pageUrl,
       notes: notes || ''
     }, this.customFields)
-    params.url = document.querySelector('input[name=url]:checked').value
+
+    params.url = url
 
     this.title = params.title
     this.notes = params.notes
@@ -161,12 +171,12 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   enableSave () {
     const popover = this.popover
-    const saveButtonContainer = popover.querySelector('.save_btn_container')
+    const saveButtonContainer = popover.querySelector('.save-btn-container')
     if (saveButtonContainer) {
       while (saveButtonContainer.firstChild) {
-        saveButtonContainer.firstChild.empty()
+        saveButtonContainer.firstChild.remove()
       }
-      saveButtonContainer.insertAdjacentHTML(`
+      saveButtonContainer.insertAdjacentHTML('afterbegin', `
         <button type="submit" id="save_btn"
              class="btn btn-primary form-control">
           Save
@@ -352,7 +362,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.disable()
     }
     this.images.forEach((image, index) => {
-      const src = this.findImageSrc(image.el)
+      const src = this.findImageSrc(image)
       if (src) {
         previewWrapper.insertAdjacentHTML('beforeend', `
           <input type="radio" form="save_tab" id="image_${index}" name="url" value="${index}">
@@ -360,6 +370,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
         `)
       }
     })
-    this.popover.querySelector('#image_0').checked = true
+    this.popover.querySelector('input[type=radio]').checked = true
   }
 }
