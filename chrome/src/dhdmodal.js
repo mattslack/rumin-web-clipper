@@ -354,7 +354,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.images.forEach((image, index) => {
       const src = this.findImageSrc(image)
       if (src) {
-        previewWrapper.insertAdjacentHTML('afterbegin', `
+        previewWrapper.insertAdjacentHTML('beforeend', `
           <input type="radio" form="save_tab" id="image_${index}" name="url" value="${index}">
           <label for="image_${index}"><img src="${src}" alt="" class="thumbnail"></label>
         `)
