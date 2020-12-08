@@ -3,6 +3,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   constructor (pageContext) {
     const customFields = pageContext.customFields
     this.pageContext = pageContext
+    this.images = customFields.images
+    delete customFields.images
 
     this.apiHost = 'https://api.dreamhousedesign.com'
     this.customFields = customFields
@@ -311,19 +313,52 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
   }
 
+  // Try to anticipate coms common lazy loading issues
+  findImageSrc (image) {
+    const validSrc = (string) => {
+      if (string && string.length) {
+        try {
+          new URL(string) /* eslint-disable-line no-new */
+        } catch (e) {
+          return false
+        }
+        return true
+      }
+      return false
+    }
+
+    let sources = []
+    if (image.complete && image.currentSrc) {
+      if (/data/i.test(image.getAttribute('src'))) {
+        sources.push(image.dataset.largesrc)
+        sources.push(image.dataset.src)
+        sources = sources.filter(validSrc)
+        if (sources.length) {
+          return sources[0]
+        }
+      } else {
+        return image.currentSrc
+      }
+    }
+    return false
+  }
+
   renderPreviews () {
     const previewWrapper = this.popover.querySelector('#thumbnails')
     while (previewWrapper.firstElementChild) {
       previewWrapper.firstElementChild.remove()
     }
-    if (this.pageContext.images.length < 1) {
+    if (this.images.length < 1) {
       this.disable()
     }
-    this.pageContext.images.forEach((image, index) => {
-      previewWrapper.insertAdjacentHTML('afterbegin', `
-        <input type="radio" form="save_tab" id="image_${index}" name="url" value="${image}">
-        <label for="image_${index}"><img src="${image}" alt="" class="thumbnail"></label>
-      `)
+    this.images.forEach((image, index) => {
+      const src = this.findImageSrc(image)
+      if (src) {
+        previewWrapper.insertAdjacentHTML('afterbegin', `
+          <input type="radio" form="save_tab" id="image_${index}" name="url" value="${index}">
+          <label for="image_${index}"><img src="${src}" alt="" class="thumbnail"></label>
+        `)
+      }
     })
     this.popover.querySelector('#image_0').checked = true
   }

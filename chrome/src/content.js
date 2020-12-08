@@ -3,16 +3,50 @@
 (function () {
   let dhdmodal
 
-  const archDailyFields = () => {
+  const archDailyFields = (fields) => {
     let copyright
+    const images = []
     let description = document.querySelector('.afd-gal-description')
-    let url
-    const pathname = window.location.pathname.replace(/^\//, '').split('/').filter((segment, index) => {
-      if (index === 0) return segment.length > 2
-      return segment.length > 0
-    })
+    description = description === null ? '' : description.textContent
+
     const specItems = document.querySelectorAll('.afd-specs__item')
     const topics = []
+
+    const processImage = (image) => {
+      const galleryFigure = image.closest('.afd-gal-figure')
+      if (galleryFigure) {
+        const alt = image.getAttribute('alt')
+        let copyright
+        if (/©/.test(alt)) {
+          copyright = parseCopyright(alt)
+        }
+        images.push({
+          copyright: copyright,
+          el: image
+        })
+      } else {
+        const figure = image.closest('.featured-image, .media-picture')
+        let caption
+        if (figure) {
+          caption = figure.querySelector('figcaption')
+          caption = caption === null ? '' : caption.textContent
+          images.push({
+            copyright: parseCopyright(caption),
+            el: image
+          })
+        }
+      }
+    }
+
+    const parseCopyright = (string) => {
+      copyright = copyright.textContent
+      const copyrightPattern = new RegExp('(©)(.*)', 'i')
+      const copyrightMatch = copyrightPattern.exec(copyright)
+      if (copyrightMatch && copyrightMatch.length >= 2) {
+        copyright = copyrightMatch[2]
+      }
+      return copyright
+    }
 
     for (const item of specItems) {
       const key = item.querySelector('.afd-specs__key')
@@ -22,44 +56,16 @@
       }
     }
 
-    if (pathname.length >= 3) { // You're in a photo gallery
-      const activeSlide = document.querySelector('.afd-gal-figure:not(.afd-hide)')
-      if (activeSlide) {
-        copyright = document.querySelector('.afd-gal-figcaption__link')
-        url = activeSlide.querySelector('img').dataset.largesrc
-      }
-      description = description === null ? '' : description.textContent.trim()
-      const articleURL = document.querySelector('a.afd-gal-close')
-      if (articleURL) {
-        topics.push({ topic: 'ArchDaily URL', value: articleURL.href })
-      }
-    } else { // You're on an article page
-      const img = document.querySelector('.featured-image, .media-picture')
-      if (img) {
-        copyright = img.querySelector('figcaption')
-        url = img.querySelector('img').src
-      }
-      topics.push({ topic: 'ArchDaily URL', value: window.location.href })
-    }
+    fields.images.forEach(processImage)
 
-    if (copyright) {
-      copyright = copyright.textContent
-      const copyrightPattern = new RegExp('(©)(.*)', 'i')
-      const copyrightMatch = copyrightPattern.exec(copyright)
-      if (copyrightMatch && copyrightMatch.length >= 2) {
-        copyright = copyrightMatch[2]
-      }
-      topics.push({ topic: 'Copyright Holder', value: copyright })
-    }
-
-    return ({
+    return Object.assign(fields, {
+      images: images,
       notes: description,
-      topics: topics,
-      url: url
+      topics: topics
     })
   }
 
-  const houzzFields = () => {
+  const houzzFields = (fields) => {
     const topics = []
     let notes = null
     let url = null
@@ -85,14 +91,14 @@
       }
     }
     topics.push({ topic: 'Houzz URL', value: window.location.href })
-    return ({
+    return Object.assign(fields, {
       notes: notes,
       topics: topics,
       url: url
     })
   }
 
-  const pinterestPinFields = () => {
+  const pinterestPinFields = (fields) => {
     let description = document.querySelector('.richPinInformation span')
     if (description) description = description.textContent
     let imageURL = document.querySelector('div[data-test-id="closeup-image"] img + div img')
@@ -105,7 +111,7 @@
     }
     let pinnedFrom = document.querySelector('a.linkModuleActionButton')
     if (pinnedFrom) pinnedFrom = pinnedFrom.href
-    return ({
+    return Object.assign(fields, {
       notes: description,
       url: imageURL,
       topics: [
@@ -133,19 +139,19 @@
 
     // Arch Daily
     if (isArchDailyPage()) {
-      Object.assign(customFields, archDailyFields())
+      customFields = archDailyFields(customFields)
       titleOverride = document.querySelector('h1').textContent || null
     }
 
     // Houzz Page
     if (isHouzzPage()) {
-      Object.assign(customFields, houzzFields())
+      customFields = houzzFields(customFields)
       titleOverride = document.title || null
     }
 
     // Pinterest Pin
     if (isPinterestPage()) {
-      Object.assign(customFields, pinterestPinFields())
+      customFields = pinterestPinFields(customFields)
       titleOverride = document.querySelector('h1').textContent || null
     }
 
@@ -199,18 +205,17 @@
           chrome.storage.local.get(['token'], (item) => {
             const token = item.token
             console.log('stored token:', token)
+            const images = Array.from(document.querySelectorAll('img'))
             let titleOverride = null
             let urlOverride = null
-            let customFields = {}
+            let customFields = {
+              images: images
+            }
 
             const processedPage = processPage(customFields)
             customFields = processedPage.customFields
             titleOverride = processedPage.titleOverride
             urlOverride = processedPage.urlOverride || null
-
-            const images = Array.from(document.querySelectorAll('img'))
-              .filter(image => image.naturalHeight > 320 && image.naturalWidth > 320)
-              .map(image => image.src)
 
             const pageContext = {
               token: token,
@@ -218,8 +223,7 @@
               titleOverride: titleOverride,
               // closestId: closestId,
               // page_dom: document.documentElement.outerHTML,
-              customFields: customFields,
-              images: images
+              customFields: customFields
             }
 
             // console.log('sending pageContext', pageContext, window.getSelection().toString())
