@@ -20,20 +20,14 @@
         if (/©/.test(alt)) {
           copyright = parseCopyright(alt)
         }
-        images.push({
-          copyright: copyright,
-          el: image
-        })
+        images.push(Object.assign(image, { copyright: copyright }))
       } else {
         const figure = image.closest('.featured-image, .media-picture')
         let caption
         if (figure) {
           caption = figure.querySelector('figcaption')
           caption = caption === null ? '' : caption.textContent
-          images.push({
-            copyright: parseCopyright(caption),
-            el: image
-          })
+          images.push(Object.assign(image, { copyright: parseCopyright(caption) }))
         }
       }
     }
@@ -205,7 +199,9 @@
           chrome.storage.local.get(['token'], (item) => {
             const token = item.token
             console.log('stored token:', token)
-            const images = Array.from(document.querySelectorAll('img'))
+            const images = Array.from(document.querySelectorAll('img')).map(image => {
+              return { el: image }
+            })
             let titleOverride = null
             let urlOverride = null
             let customFields = {
