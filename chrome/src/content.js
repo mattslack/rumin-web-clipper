@@ -96,26 +96,51 @@
   }
 
   const pinterestPinFields = (fields) => {
-    let description = document.querySelector('.richPinInformation span')
-    if (description) description = description.textContent
-    let imageURL = document.querySelector('div[data-test-id="closeup-image"] img + div img')
-    if (imageURL) {
-      imageURL = imageURL.src
-    }
-    let pinnedBy = document.querySelector('.pinActivityContainer svg title, .pinActivityContainer img')
-    if (pinnedBy) {
-      pinnedBy = pinnedBy.alt || pinnedBy.textContent
-    }
-    let pinnedFrom = document.querySelector('a.linkModuleActionButton')
-    if (pinnedFrom) pinnedFrom = pinnedFrom.href
+    const images = []
+    fields.images.forEach(image => {
+      image = image.el
+      if (image.closest('.Closeup')) {
+        let description = document.querySelector('.richPinInformation span')
+        if (description) description = description.textContent
+        let imageURL = document.querySelector('div[data-test-id="closeup-image"] img + div img')
+        if (imageURL) {
+          imageURL = imageURL.src
+        }
+        let pinnedBy = document.querySelector('.pinActivityContainer svg title, .pinActivityContainer img')
+        if (pinnedBy) {
+          pinnedBy = pinnedBy.alt || pinnedBy.textContent
+        }
+        let pinnedFrom = document.querySelector('a.linkModuleActionButton')
+        if (pinnedFrom) pinnedFrom = pinnedFrom.href
+        images.push({
+          el: image,
+          notes: description,
+          topics: [
+            { topic: 'Pin URL', value: window.location.href },
+            { topic: 'Pinned By', value: pinnedBy },
+            { topic: 'Pin Source URL', value: pinnedFrom }
+          ]
+        })
+      } else {
+        const wrapper = image.closest('[data-test-id="pinWrapper"]')
+        if (wrapper) {
+          const topics = []
+          const alt = image.getAttribute('alt')
+          let notes = ''
+          if (alt && alt.length) notes = alt
+          const link = wrapper.querySelector('a')
+          if (link) topics.push({ topic: 'Pin URL', value: link.href })
+          images.push({
+            el: image,
+            notes: notes,
+            topics: topics
+          })
+        }
+      }
+    })
+
     return Object.assign(fields, {
-      notes: description,
-      url: imageURL,
-      topics: [
-        { topic: 'Pin URL', value: window.location.href },
-        { topic: 'Pinned By', value: pinnedBy },
-        { topic: 'Pin Source URL', value: pinnedFrom }
-      ]
+      images: images
     })
   }
 
@@ -133,32 +158,30 @@
 
   const processPage = (customFields) => {
     let titleOverride = null
+    const h1 = document.querySelectorAll('h1')
+
+    // Page title
+    if (h1.length > 0) {
+      const pageTitle = h1[0].textContent.trim()
+      if (pageTitle.length) {
+        customFields.page_title = pageTitle
+        titleOverride = pageTitle
+      }
+    }
 
     // Arch Daily
     if (isArchDailyPage()) {
       customFields = archDailyFields(customFields)
-      titleOverride = document.querySelector('h1').textContent || null
     }
 
     // Houzz Page
     if (isHouzzPage()) {
       customFields = houzzFields(customFields)
-      titleOverride = document.title || null
     }
 
     // Pinterest Pin
     if (isPinterestPage()) {
       customFields = pinterestPinFields(customFields)
-      titleOverride = document.querySelector('h1').textContent || null
-    }
-
-    // Page title
-    const h1 = document.querySelectorAll('h1')
-    if (h1.length > 0) {
-      const pageTitle = h1[0].textContent.trim()
-      if (pageTitle.length) {
-        customFields.page_title = pageTitle
-      }
     }
 
     return {
@@ -201,7 +224,7 @@
         closeModal()
       }
       if (request.message === 'clicked_browser_action') {
-        if (dhdmodal === undefined || document.querySelector('#dhd-popover') === null) {
+        if (!(dhdmodal instanceof DHDModal) || document.querySelector('#dhd-popover') === null) {
           chrome.storage.local.get(['token'], (item) => {
             const token = item.token
             console.log('stored token:', token)
@@ -218,8 +241,8 @@
             customFields = processedPage.customFields
             titleOverride = processedPage.titleOverride
             urlOverride = processedPage.urlOverride || null
-            if (customFields.topics.length === 0) {
-              customFields.topics.push({ topic: 'Source URL', value: window.location.href })
+            if (customFields.topics === undefined || customFields.topics.length === 0) {
+              customFields.topics = [{ topic: 'Source URL', value: window.location.href }]
             }
 
             const pageContext = {

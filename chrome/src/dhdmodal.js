@@ -370,8 +370,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.disable()
     }
     this.images.forEach((image, index) => {
-      image = image.el
-      const src = this.findImageSrc(image)
+      const src = this.findImageSrc(image.el)
       if (src) {
         previewWrapper.insertAdjacentHTML('beforeend', `
           <input type="radio" form="save_tab" id="image_${index}" name="url" value="${index}">
