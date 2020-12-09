@@ -9,7 +9,9 @@
     description = description === null ? '' : description.textContent
 
     const specItems = document.querySelectorAll('.afd-specs__item')
-    const topics = []
+    const topics = [
+      { topic: 'ArchDaily URL', value: window.location.url }
+    ]
 
     const processImage = (image) => {
       image = image.el
@@ -19,9 +21,9 @@
         let copyright
         if (/©/.test(alt)) {
           copyright = parseCopyright(alt)
-          images.push(Object.assign(image, { topics: [copyright] }))
+          images.push({ el: image, topics: [copyright] })
         } else {
-          images.pus(image)
+          images.push({ el: image })
         }
       } else {
         const figure = image.closest('.featured-image, .media-picture')
@@ -29,7 +31,7 @@
         if (figure) {
           caption = figure.querySelector('figcaption')
           caption = caption === null ? '' : caption.textContent
-          images.push(Object.assign(image, { topics: [parseCopyright(caption)] }))
+          images.push({ el: image, topics: [parseCopyright(caption)] })
         }
       }
     }
@@ -153,7 +155,10 @@
     // Page title
     const h1 = document.querySelectorAll('h1')
     if (h1.length > 0) {
-      customFields.page_title = h1[0].textContent.trim()
+      const pageTitle = h1[0].textContent.trim()
+      if (pageTitle.length) {
+        customFields.page_title = pageTitle
+      }
     }
 
     return {
@@ -213,6 +218,9 @@
             customFields = processedPage.customFields
             titleOverride = processedPage.titleOverride
             urlOverride = processedPage.urlOverride || null
+            if (customFields.topics.length === 0) {
+              customFields.topics.push({ topic: 'Source URL', value: window.location.href })
+            }
 
             const pageContext = {
               token: token,

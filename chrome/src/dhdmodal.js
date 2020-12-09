@@ -20,7 +20,11 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     let title = this.popover.querySelector('#captured_title_field')
     let notes = this.popover.querySelector('#captured_note_field')
     if (title !== null) title = title.value
-    if (notes !== null) notes = notes.value
+    if (notes !== null) {
+      notes = notes.value
+    } else {
+      notes = ''
+    }
 
     const selectedImage = document.querySelector('input[name=url]:checked')
     const url = selectedImage.labels[0].querySelector('img').getAttribute('src')
@@ -31,17 +35,21 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.customFields.topics = Object.assign(this.customFields.topics, selectedImageFields.topics)
     }
 
-    const params = Object.assign({}, {
-      title: title,
-      source_url: this.pageUrl,
-      notes: notes || ''
-    }, this.customFields)
+    let params = {
+      notes: notes,
+      topics: []
+    }
+    if (title) {
+      params.title = title
+    }
+    params = Object.assign(params, this.customFields)
 
     params.url = url
 
     this.title = params.title
     this.notes = params.notes
 
+    console.log(params)
     return params
   }
 
@@ -296,7 +304,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
 
     this.title = title
-    if (this.customFields && Object.keys(this.customFields).length > 0) {
+    if (this.customFields instanceof Object) {
       this.popover.querySelector('#custom_fields_section').classList.remove('hidden')
 
       const divider = '<div class="divider"></div>'
@@ -362,6 +370,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.disable()
     }
     this.images.forEach((image, index) => {
+      image = image.el
       const src = this.findImageSrc(image)
       if (src) {
         previewWrapper.insertAdjacentHTML('beforeend', `
