@@ -63,9 +63,33 @@
   }
 
   const houzzFields = (fields) => {
-    const topics = []
-    let notes = null
-    let url = null
+    const images = []
+    fields.images.forEach(image => {
+      image = image.el
+      let notes = ''
+      let title
+      // Home feed Images
+      if (image.closest('.hz-hf-card')) {
+        const topics = [
+          { topic: 'Source URL', value: window.location.href }
+        ]
+        title = image.closest('.hz-hf-card').querySelector('.hz-hf-card-details__title')
+        if (title) {
+          if (title.querySelector('a[href]')) topics.push({ topic: 'Houzz URL', value: title.querySelector('a').href })
+          notes = title.querySelector('.hz-hf-card-info__subtitle') || ''
+          if (notes.length) notes = notes.textContent
+          if (title.textContent) title = title.textContent.trim()
+        }
+        images.push({
+          el: image,
+          notes: notes,
+          title: title,
+          topics: topics
+        })
+      }
+    })
+
+    /*
     let image = document.querySelector('img.view-photo-image-pane__image')
     const description = document.querySelector('.hz-view-photo__space-info__description') || document.querySelector('.vp-redesign-description')
     if (description) {
@@ -88,10 +112,9 @@
       }
     }
     topics.push({ topic: 'Houzz URL', value: window.location.href })
+    */
     return Object.assign(fields, {
-      notes: notes,
-      topics: topics,
-      url: url
+      images: images
     })
   }
 
