@@ -53,6 +53,11 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     return params
   }
 
+  appendThumbnailHeader () {
+    const wrapper = this.popover.querySelector('#thumbnails')
+    wrapper.insertAdjacentHTML('afterbegin', '<div id="dhd-thumbnails-header"><p>Select one of the images below to save it to your Dream House Clipboard.</p></div>')
+  }
+
   build () {
     const popover = document.createElement('div')
     const logo = chrome.extension.getURL('assets/logo.svg')
@@ -386,7 +391,10 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
     if (this.images.length < 1) {
       this.disable()
+      this.noImages()
+      return
     }
+    this.appendThumbnailHeader()
     this.images.forEach((image, index) => {
       const src = this.findImageSrc(image.el)
       if (src) {

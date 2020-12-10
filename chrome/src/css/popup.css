@@ -294,6 +294,9 @@
   overflow-y: auto;
   padding: 1rem 1rem 20rem 1rem;
 }
+#dhd-popover #dhd-thumbnails-header {
+  text-align: center;
+}
 #dhd-popover #thumbnail:empty {
   display: none;
 }
@@ -328,10 +331,16 @@
   #dhd-popover #thumbnails {
     grid-template-columns: repeat(2, 1fr);
   }
+  #dhd-popover #dhd-thumbnails-header {
+    grid-column: 1 / 3;
+  }
 }
 @media screen and (min-width: 80rem) {
   #dhd-popover #thumbnails {
     grid-template-columns: repeat(3, 1fr);
+  }
+  #dhd-popover #dhd-thumbnails-header {
+    grid-column: 1 / 4;
   }
 }
 @media screen and (min-width: 90rem) {
