@@ -1,6 +1,6 @@
 {
   "name": "Dream House",
-  "version": "0.0.1.0",
+  "version": "0.0.1.9",
   "description": "",
   "permissions": ["activeTab", "storage"],
   "optional_permissions": [],
@@ -38,5 +38,8 @@
     "32": "images/icon32.png",
     "128": "images/icon128.png"
   },
-  "manifest_version": 2
+  "manifest_version": 2,
+  "web_accessible_resources": [
+    "assets/*"
+  ]
 }

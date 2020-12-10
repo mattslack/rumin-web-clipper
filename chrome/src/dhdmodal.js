@@ -55,9 +55,18 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   build () {
     const popover = document.createElement('div')
+    const logo = chrome.extension.getURL('assets/logo.svg')
     popover.setAttribute('id', 'dhd-popover')
     popover.insertAdjacentHTML('afterbegin', `
       <div class="overlay">
+        <div id="dhd-header">
+          <h1 id="dhd-branding">
+            <img src="${logo}" alt="Dream House Design" id="dhd-logo">
+          </h1>
+          <button id="dhd-close" type="button">
+            Close
+          </button>
+        </div>
         <div id="thumbnails">
         </div>
         <div id="fields">
@@ -139,6 +148,12 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     document.body.appendChild(this.backdrop)
     document.body.style.setProperty('overflow', 'hidden')
     popover.querySelector('#sign-in-form').addEventListener('submit', (event) => this.onSignIn(event))
+    popover.querySelector('#dhd-close').addEventListener('click', () => this.destroy())
+    this.backdrop.addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) {
+        this.destroy()
+      }
+    })
 
     this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
     this.saveTabBtn = popover.querySelector('#save_tab_btn')
@@ -245,6 +260,9 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
 
     saveMe()
+  }
+
+  onSelectImage = (event) => {
   }
 
   onSelectTab = (event) => {
