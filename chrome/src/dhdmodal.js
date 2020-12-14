@@ -9,6 +9,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.apiHost = 'https://api.dreamhousedesign.com'
     this.customFields = customFields
     this.pageUrl = pageContext.urlOverride ? pageContext.urlOverride : window.location.href
+    this.spinner = chrome.extension.getURL('assets/spinner.webp')
     this.token = pageContext.token
 
     const backdrop = document.createElement('div')
@@ -233,7 +234,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   onSave (event) {
     event.preventDefault()
-    this.toggleSave(false, '<div style="width: 100%; text-align: center"><img width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>')
+    this.toggleSave(false, `<div style="width: 100%; text-align: center"><img src="${this.spinner}"width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>`)
 
     const url = `${this.apiHost}/api/clipboard`
     const data = this.activityData
