@@ -7,9 +7,9 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     delete customFields.images
 
     this.apiHost = 'https://api.dreamhousedesign.com'
+    this.apiHost = 'http://localhost:4000'
     this.customFields = customFields
     this.pageUrl = pageContext.urlOverride ? pageContext.urlOverride : window.location.href
-    this.spinner = chrome.extension.getURL('assets/spinner.webp')
     this.token = pageContext.token
 
     const backdrop = document.createElement('div')
@@ -37,6 +37,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       this.customFields.topics = Object.assign(this.customFields.topics, selectedImageFields.topics)
     }
 
+    delete this.customFields.page_title
     let params = {
       notes: notes,
       topics: []
@@ -192,7 +193,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     signInForm.classList.add('tab', 'section-container')
     signInForm.setAttribute('id', 'sign-in-form')
     signInForm.setAttribute('method', 'post')
-    signInForm.setAttribute('action', 'https://api.dreamhousedesign.com/api/token')
+    signInForm.setAttribute('action', `${this.apiHost}/api/token`)
     signInForm.insertAdjacentHTML('afterbegin', `
       <div class="form-group">
         <input type="hidden" name="grant_type" value="password">
@@ -210,6 +211,18 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     return signInForm
   }
 
+  closeMessage (event) {
+    let message
+    if (event) {
+      message = event.currentTarget.closest('.dhd-message')
+    } else {
+      message = this.popover.querySelector('.dhd-message')
+    }
+    if (message) {
+      message.remove()
+    }
+  }
+
   destroy () {
     window.clearTimeout(this.closeOut)
     this.backdrop.remove()
@@ -219,7 +232,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   onExpired () {
     this.showMessage('Looks like your session is expired. Please <button type="button" class="btn btn--text">sign in again</button>.', 'warning')
     window.requestAnimationFrame(() => {
-      this.popover.querySelector('.dhd-message button').addEventListener('click', () => {
+      this.popover.querySelector('.dhd-message .btn').addEventListener('click', () => {
         this.onSelectTab(this.signInForm)
       }, { once: true })
     })
@@ -234,7 +247,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   onSave (event) {
     event.preventDefault()
-    this.toggleSave(false, `<div style="width: 100%; text-align: center"><img src="${this.spinner}"width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>`)
+    this.toggleSave(false, 'Saving… Do not close this')
 
     const url = `${this.apiHost}/api/clipboard`
     const data = this.activityData
@@ -279,6 +292,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const container = this.popover.querySelector('.overlay')
     if (currentTab) {
       if (newTab.id === currentTab.id) return
+      const leftover = currentTab.querySelector('.dhd-message')
+      if (leftover) leftover.remove()
       if (currentTab.id === 'dhd-save-form') {
         this.saveForm = currentTab
       } else {
@@ -307,7 +322,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
               this.signInForm.reset()
               this.token = token
               console.log('saved token:', this.token)
-              // this.popover.querySelector('#save-tab').insertAdjacentHTML('afterbegin', '<div class="dhd-success"><p>You’re signed in.</p></div>')
             })
           })
         }
@@ -330,7 +344,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const setTitle = () => {
       const titleField = this.popover.querySelector('#captured_title_field')
       let title
-      if (titleField.value === undefined) {
+      if (titleField.value === undefined || titleField.value.length === 0) {
         title = this.title
 
         if (!title || (title && title.trim() === '')) {
@@ -425,8 +439,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     })
   }
 
-  closeWithMesssage (msg, level) {
-    this.popover.innerHTML = `<div class="dhd-message dhd-message--level"><p>${msg}</p></div>`
+  closeWithMessage (msg, level) {
+    this.popover.innerHTML = `<div class="dhd-message dhd-message--${level}"><p>${msg}</p></div>`
     this.closeOut = window.setTimeout(() => { this.destroy() }, 3000)
   }
 
@@ -436,9 +450,17 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       if (container.firstElementChild && container.firstElementChild.classList.contains('dhd-message')) container.firstElementChild.remove()
       container.insertAdjacentHTML('afterbegin', `
         <div class="dhd-message dhd-message--${level}">
-          <p>${msg}</p>
+          <button type="button" id="dhd-close-message">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32">
+              <path fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="4" d="M5,5 L27,27 M27,5 L5,27" />
+            </svg>
+          </button>
+          ${msg}
         </div>
       `)
+      container.querySelector('#dhd-close-message').addEventListener('click', (event) => {
+        this.closeMessage(event)
+      }, { once: true })
     }
   }
 

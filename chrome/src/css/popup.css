@@ -148,6 +148,7 @@
 }
 #dhd-popover textarea.form-control {
   height: auto;
+  overflow-y: auto;
 }
 #dhd-popover .form-group {
   margin-bottom: 1rem;
@@ -241,20 +242,39 @@
   grid-template-columns: 1fr 350px;
 }
 #dhd-popover .dhd-message {
+  background: var(--dhd-message-bg);
   border: solid 1px currentColor;
   padding: 1rem;
+  position: relative;
 }
 #dhd-popover .dhd-message--warning {
-  background-color: #ffedcc;
+  --dhd-message-bg: #ffedcc;
   color: #ffa500;
 }
 #dhd-popover .dhd-message--error {
-  background: #fcc;
+  --dhd-message-bg: #fcc;
   color: #911;
 }
 #dhd-popover .dhd-message--success {
-  background: #cfc;
+  --dhd-message-bg: #cfc;
   color: #191;
+}
+
+#dhd-popover #dhd-close-message {
+  align-items: center;
+  background: var(--dhd-message-bg);
+  border: solid 1px currentColor;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0.5rem rgba(0,0,0,0.8);
+  color: inherit;
+  display: flex;
+  height: 1.5rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: -0.5rem;
+  top: -0.5rem;
+  width: 1.5rem;
 }
 
 #dhd-popover #thumbnails {
@@ -275,6 +295,7 @@
   display: none;
 }
 #dhd-popover .thumbnail {
+  background-color: rgba(0,0,0,0.2);
   display: block;
   max-height: 100%;
   max-width: 100%;
@@ -293,7 +314,7 @@
 #dhd-popover input:checked + label > img {
   border-color: #fff;
   box-shadow:
-    0 0 0 2px #709bcc,
+    0 0 0 3px #709bcc,
     0 2.8px 2.2px rgba(0, 0, 0, 0.062),
     0 6.7px 5.3px rgba(0, 0, 0, 0.089),
     0 12.5px 10px rgba(0, 0, 0, 0.11)

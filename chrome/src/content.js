@@ -6,7 +6,7 @@
   const archDailyFields = (fields) => {
     const images = []
     let description = document.querySelector('.afd-gal-description')
-    description = description === null ? '' : description.textContent
+    description = description === null ? '' : description.textContent.trim()
 
     const specItems = document.querySelectorAll('.afd-specs__item')
     const topics = [
@@ -42,7 +42,7 @@
       if (copyrightMatch && copyrightMatch.length >= 2) {
         copyright = copyrightMatch[2]
       }
-      return { topic: 'Copyright Holder', value: copyright }
+      return { topic: 'Copyright Holder', value: copyright.trim() }
     }
 
     for (const item of specItems) {
