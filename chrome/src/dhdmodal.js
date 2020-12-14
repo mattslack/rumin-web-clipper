@@ -120,19 +120,11 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       onChange({ currentTarget: saveTab })
     }
 
-    const toggleSave = (enabled, msg) => {
-      const saveBtn = saveTab.querySelector('#save_btn')
-      if (saveBtn) {
-        saveBtn.disabled = !enabled
-        saveBtn.textContent = msg || 'Add to Your Dream House Clipboard'
-      }
-    }
-
     const onChange = (event) => {
       let valid = false
       const elements = event.currentTarget.elements
       valid = Array.from(elements).filter(element => element.getAttribute('name') === 'url').some(element => element.checked)
-      toggleSave(valid)
+      this.toggleSave(valid)
     }
 
     const saveTab = document.createElement('form')
@@ -190,7 +182,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     `)
     saveTab.addEventListener('activate', () => activate())
     saveTab.addEventListener('change', (event) => onChange(event))
-    saveTab.addEventListener('submit', () => this.onSave())
+    saveTab.addEventListener('submit', (event) => this.onSave(event))
     return saveTab
   }
 
@@ -224,11 +216,11 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
   }
 
   onExpired () {
-    this.popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please <button type="button" class="btn btn--text">sign in again</button>.</p>'
+    this.showMessage('Looks like your session is expired. Please <button type="button" class="btn btn--text">sign in again</button>.', 'warning')
     window.requestAnimationFrame(() => {
-      this.popover.querySelector('.save-btn-container button').addEventListener('click', () => {
+      this.popover.querySelector('.dhd-message button').addEventListener('click', () => {
         this.onSelectTab(this.signInForm)
-      })
+      }, { once: true })
     })
   }
 
@@ -241,9 +233,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
 
   onSave (event) {
     event.preventDefault()
-    const saveButton = event.currentTarget
-    saveButton.innerHTML = '<div style="width: 100%; text-align: center"><img width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>'
-    saveButton.disabled = true
+    this.toggleSave(false, '<div style="width: 100%; text-align: center"><img width="32" height="32" style="margin: auto; display: none" /><p><small>Saving...Do not close this</small></p></div>')
 
     const url = `${this.apiHost}/api/clipboard`
     const data = this.activityData
@@ -260,20 +250,27 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       })
         .then((response) => {
           if (response.status === 201) {
-            this.popover.innerHTML = '<div class="dhd-success"><p>The content is successfully saved.</p></div>'
-            this.closeOut = window.setTimeout(() => { this.destroy() }, 3000)
+            this.closeWithMessage('The content was successfully saved', 'success')
           } else if (response.status === 401) {
             this.onExpired()
           } else {
-            this.popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a class="btn btn--text" href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.</p>`
+            this.showMessage(`Looks there was a problem saving. <a class="btn btn--text" href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.`, 'error')
+            this.toggleSave(true)
           }
         })
         .catch((error) => {
-          this.popover.querySelector('.save-btn-container').innerHTML = `<p>Looks there was a problem saving. <a class="btn btn--text" href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">Send a bug report</a>.</p>`
+          this.showMessage(`
+            Looks there was a problem saving.
+            <a class="btn btn--text" href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(error))}">
+              Send a bug report
+            </a>.
+          `, 'error')
+          this.toggleSave(true)
         })
     }
 
     saveMe()
+    return false
   }
 
   onSelectTab = (newTab) => {
@@ -377,7 +374,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
   }
 
-  // Try to anticipate coms common lazy loading issues
+  // Try to anticipate some common lazy loading issues
   findImageSrc (image) {
     const validSrc = (string) => {
       if (string && string.length) {
@@ -425,5 +422,30 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
         `)
       }
     })
+  }
+
+  closeWithMesssage (msg, level) {
+    this.popover.innerHTML = `<div class="dhd-message dhd-message--level"><p>${msg}</p></div>`
+    this.closeOut = window.setTimeout(() => { this.destroy() }, 3000)
+  }
+
+  showMessage (msg, level) {
+    const container = this.popover.querySelector('.capture-container, .section-container')
+    if (container) {
+      if (container.firstElementChild && container.firstElementChild.classList.contains('dhd-message')) container.firstElementChild.remove()
+      container.insertAdjacentHTML('afterbegin', `
+        <div class="dhd-message dhd-message--${level}">
+          <p>${msg}</p>
+        </div>
+      `)
+    }
+  }
+
+  toggleSave = (enabled, msg) => {
+    const saveBtn = this.popover.querySelector('#save_btn')
+    if (saveBtn) {
+      saveBtn.disabled = !enabled
+      saveBtn.innerHTML = msg || 'Add to Your Dream House Clipboard'
+    }
   }
 }

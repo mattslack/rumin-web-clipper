@@ -240,16 +240,21 @@
   grid-gap: 2rem;
   grid-template-columns: 1fr 350px;
 }
-#dhd-popover .dhd-error {
+#dhd-popover .dhd-message {
+  border: solid 1px currentColor;
+  padding: 1rem;
+}
+#dhd-popover .dhd-message--warning {
+  background-color: #ffedcc;
+  color: #ffa500;
+}
+#dhd-popover .dhd-message--error {
+  background: #fcc;
   color: #911;
 }
-#dhd-popover .dhd-success {
-  color: #191;
-}
-#dhd-popover > .dhd-success {
+#dhd-popover .dhd-message--success {
   background: #cfc;
-  border: solid 1px #191;
-  padding: 1rem;
+  color: #191;
 }
 
 #dhd-popover #thumbnails {
