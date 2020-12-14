@@ -1,4 +1,4 @@
-/* global FormData, chrome, fetch  */
+/* global Event, FormData, chrome, fetch  */
 class DHDModal { /* eslint-disable-line no-unused-vars */
   constructor (pageContext) {
     const customFields = pageContext.customFields
@@ -14,6 +14,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const backdrop = document.createElement('div')
     backdrop.setAttribute('id', 'dhd-popover-backdrop')
     this.backdrop = backdrop
+    this.build()
   }
 
   get activityData () {
@@ -68,110 +69,36 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
           <h1 id="dhd-branding">
             <img src="${logo}" alt="Dream House Design" id="dhd-logo">
           </h1>
+          <button id="dhd-sign-out" type="button">
+            Sign Out
+          </button>
           <button id="dhd-close" type="button">
             Close
           </button>
-        </div>
-        <div id="thumbnails">
-        </div>
-        <div id="fields">
-          <div class="tabs">
-            <button id="save_tab_btn"
-                 data-content="save_tab"
-                 class="tab active">
-              Save
-            </button>
-            <button id="lookup_tab_btn"
-                 data-content="lookup_tab"
-                 class="tab">
-               Sign In
-            </button>
-          </div>
-          <form id="save_tab"
-               class="capture-container">
-            <div class="capture-form-container">
-              <div class="form-group" id="thumbnail"></div>
-              <div class="form-group">
-                <label for="captured_title_field" class="field-label">
-                  Title
-                </label>
-                <input type="text"
-                     id="captured_title_field"
-                     class="title-field form-control"
-                     placeholder="Untitled page"
-                     autofocus="true"
-                     maxlength="300">
-              </div>
-              <div class="captured-selection">
-                <div id="captured_selection"></div>
-              </div>
-              <div class="form-group">
-                <label for="captured_note_field" class="field-label">
-                  Note
-                </label>
-                <textarea id="captured_note_field"
-                     class="note-field form-control"
-                     placeholder=""></textarea>
-              </div>
-              <!-- Advanced section, for configuring fields -->
-              <div id="custom_fields_section"
-                   class="hidden"
-                   style="padding: 0.5em 0">
-                <div id="custom_fields_heading"
-                     class="section-heading flex">
-                  <div class="text">
-                    Properties
-                  </div>
-                </div>
-                <div id="custom_fields"
-                     class="custom-fields-content">
-                </div>
-              </div>
-            </div>
-            <div class="save-btn-container">
-            </div>
-          </form>
-          <div id="lookup_tab" class="section-container hidden">
-            <form method="post" action="https://api.dreamhousedesign.com/api/token" id="sign-in-form">
-              <div class="form-group">
-                <input type="hidden" name="grant_type" value="password">
-                <label class="field-label" for="email">Email</label>
-                <input class="form-control" type="email" autocomplete="email" id="email" name="username">
-                <br>
-                <label class="field-label" for="password">Password</label>
-                <input class="form-control" type="password" autocomplete="password" id="password" name="password">
-              </div>
-              <div class="save-btn-container">
-                <input type="submit" value="Sign In" class="btn btn-primary form-control">
-              </div>
-            </form>
-          </div>
         </div>
       </div>
     `)
     this.backdrop.appendChild(popover)
     document.body.appendChild(this.backdrop)
     document.body.style.setProperty('overflow', 'hidden')
-    popover.querySelector('#sign-in-form').addEventListener('submit', (event) => this.onSignIn(event))
     popover.querySelector('#dhd-close').addEventListener('click', () => this.destroy())
+    popover.querySelector('#dhd-sign-out').addEventListener('click', () => this.onSignOut())
     this.backdrop.addEventListener('click', (event) => {
       if (event.target === event.currentTarget) {
         this.destroy()
       }
     })
 
-    this.signInTabBtn = popover.querySelector('#lookup_tab_btn')
-    this.saveTabBtn = popover.querySelector('#save_tab_btn')
-
     this.popover = popover
-    Array.from(this.popover.querySelectorAll('.tab')).forEach(tab => tab.addEventListener('click', (event) => this.onSelectTab(event)))
-    if (this.token === undefined) {
-      this.onSelectTab({ target: this.signInTabBtn })
-      this.disableSave()
-    } else {
-      this.enableSave()
-    }
     document.addEventListener('keydown', (event) => this.onKeydown(event))
+    this.saveForm = this.buildSaveForm()
+    this.signInForm = this.buildSignInForm()
+
+    if (this.token === undefined) {
+      this.onSelectTab(this.signInForm)
+    } else {
+      this.onSelectTab(this.saveForm)
+    }
   }
 
   buildCustomField (name, value) {
@@ -180,11 +107,114 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
 
     return (`
-      <div style="margin-bottom: 0.5em;">
-        <div class="prop-name" style="margin-right: 0.5em;">${name}:</div>
-        <div class="prop-value">${value}</div>
+        <div style="margin-bottom: 0.5em;">
+          <div class="prop-name" style="margin-right: 0.5em;">${name}:</div>
+          <div class="prop-value">${value}</div>
+        </div>
+    `)
+  }
+
+  buildSaveForm () {
+    const activate = () => {
+      this.populate()
+      onChange({ currentTarget: saveTab })
+    }
+
+    const toggleSave = (enabled, msg) => {
+      const saveBtn = saveTab.querySelector('#save_btn')
+      if (saveBtn) {
+        saveBtn.disabled = !enabled
+        saveBtn.textContent = msg || 'Add to Your Dream House Clipboard'
+      }
+    }
+
+    const onChange = (event) => {
+      let valid = false
+      const elements = event.currentTarget.elements
+      valid = Array.from(elements).filter(element => element.getAttribute('name') === 'url').some(element => element.checked)
+      toggleSave(valid)
+    }
+
+    const saveTab = document.createElement('form')
+    saveTab.classList.add('tab')
+    saveTab.setAttribute('id', 'dhd-save-form')
+    saveTab.insertAdjacentHTML('afterbegin', `
+      <form class="tab hidden" id="save-tab">
+        <div id="thumbnails"></div>
+        <div class="capture-container">
+          <div class="capture-form-container">
+            <div class="form-group">
+              <label for="captured_title_field" class="field-label">
+                Title
+              </label>
+              <input type="text"
+                   id="captured_title_field"
+                   class="title-field form-control"
+                   placeholder="Untitled page"
+                   autofocus="true"
+                   maxlength="300">
+            </div>
+            <div class="captured-selection">
+              <div id="captured_selection"></div>
+            </div>
+            <div class="form-group">
+              <label for="captured_note_field" class="field-label">
+                Note
+              </label>
+              <textarea id="captured_note_field"
+                   class="note-field form-control"
+                   placeholder=""></textarea>
+            </div>
+            <div id="custom_fields_section"
+                 style="padding: 0.5em 0">
+              <div id="custom_fields_heading"
+                   class="section-heading flex">
+                <div class="text">
+                  Properties
+                </div>
+              </div>
+              <div id="custom_fields" class="custom-fields-content">
+              </div>
+            </div>
+          </div>
+          <div class="save-btn-container">
+            <button type="submit"
+              disabled="disabled"
+              id="save_btn"
+              class="btn btn-primary form-control">
+              Add to Dream House Clipboard
+            </button>
+          </div>
+        </div>
+      </form>
+    `)
+    saveTab.addEventListener('activate', () => activate())
+    saveTab.addEventListener('change', (event) => onChange(event))
+    saveTab.addEventListener('submit', () => this.onSave())
+    return saveTab
+  }
+
+  buildSignInForm () {
+    const signInForm = document.createElement('form')
+    signInForm.classList.add('tab', 'section-container')
+    signInForm.setAttribute('id', 'sign-in-form')
+    signInForm.setAttribute('method', 'post')
+    signInForm.setAttribute('action', 'https://api.dreamhousedesign.com/api/token')
+    signInForm.insertAdjacentHTML('afterbegin', `
+      <div class="form-group">
+        <input type="hidden" name="grant_type" value="password">
+        <label class="field-label" for="email">Email</label>
+        <input class="form-control" type="email" autocomplete="email" id="email" name="username">
+        <br>
+        <label class="field-label" for="password">Password</label>
+        <input class="form-control" type="password" autocomplete="password" id="password" name="password">
+      </div>
+      <div class="sign-in-btn-container">
+        <input type="submit" value="Sign In" class="btn btn-primary form-control">
       </div>
     `)
+    signInForm.addEventListener('submit', (event) => this.onSignIn(event))
+    return signInForm
   }
 
   destroy () {
@@ -193,32 +223,11 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     document.body.style.removeProperty('overflow')
   }
 
-  disableSave () {
-    this.popover.querySelector('#save_btn').removeEventListener('click', (event) => this.onSave(event))
-  }
-
-  enableSave () {
-    const popover = this.popover
-    const saveButtonContainer = popover.querySelector('.save-btn-container')
-    if (saveButtonContainer) {
-      while (saveButtonContainer.firstChild) {
-        saveButtonContainer.firstChild.remove()
-      }
-      saveButtonContainer.insertAdjacentHTML('afterbegin', `
-        <button type="submit" id="save_btn"
-             class="btn btn-primary form-control">
-          Save
-        </button>
-      `)
-      popover.querySelector('#save_btn').addEventListener('click', (event) => this.onSave(event))
-    }
-  }
-
   onExpired () {
     this.popover.querySelector('.save-btn-container').innerHTML = '<p>Looks like your session is expired. Please <button type="button" class="btn btn--text">sign in again</button>.</p>'
     window.requestAnimationFrame(() => {
       this.popover.querySelector('.save-btn-container button').addEventListener('click', () => {
-        this.onSelectTab({ target: this.signInTabBtn })
+        this.onSelectTab(this.signInForm)
       })
     })
   }
@@ -267,18 +276,20 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     saveMe()
   }
 
-  onSelectImage = (event) => {
-  }
-
-  onSelectTab = (event) => {
-    if (event.target.classList.contains('tab')) {
-      if (event.type) event.stopImmediatePropagation()
-      const tabs = Array.from(this.popover.querySelectorAll('.tab'))
-      tabs.forEach((tab) => {
-        tab.classList.toggle('active', tab === event.target)
-        this.popover.querySelector(`#${tab.dataset.content}`).classList.toggle('hidden', tab !== event.target)
-      })
+  onSelectTab = (newTab) => {
+    const currentTab = this.popover.querySelector('.tab')
+    const container = this.popover.querySelector('.overlay')
+    if (currentTab) {
+      if (newTab.id === currentTab.id) return
+      if (currentTab.id === 'dhd-save-form') {
+        this.saveForm = currentTab
+      } else {
+        this.signInForm = currentTab
+      }
+      currentTab.remove()
     }
+    container.appendChild(newTab)
+    newTab.dispatchEvent(new Event('activate'))
   }
 
   onSignIn (event) {
@@ -294,17 +305,16 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
             const token = json.access_token
             console.log('received token:', token)
             chrome.storage.local.set({ token: token }, () => {
-              this.enableSave()
-              this.onSelectTab({ target: this.saveTabBtn })
+              this.onSelectTab(this.saveForm)
+              this.signInForm.reset()
               this.token = token
               console.log('saved token:', this.token)
-              this.popover.querySelector('#save_tab').insertAdjacentHTML('afterbegin', '<div class="dhd-success"><p>You’re signed in.</p></div>')
-              this.popover.querySelector('#sign-in-form').reset()
+              // this.popover.querySelector('#save-tab').insertAdjacentHTML('afterbegin', '<div class="dhd-success"><p>You’re signed in.</p></div>')
             })
           })
         }
         if (response.status === 401) {
-          this.popover.querySelector('#lookup_tab .form-group').insertAdjacentHTML('afterend', '<div class="dhd-error"><p>Sorry, we couldn’t sign you in with that email and password.</p></div>')
+          this.popover.querySelector('#sign-in-tab .form-group').insertAdjacentHTML('afterend', '<div class="dhd-error"><p>Sorry, we couldn’t sign you in with that email and password.</p></div>')
         }
       })
       .catch((error) => {
@@ -312,24 +322,37 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       })
   }
 
+  onSignOut () {
+    chrome.storage.local.remove('token', () => {
+      this.onSelectTab(this.signInForm)
+    })
+  }
+
   populate () {
-    const titleField = this.popover.querySelector('#captured_title_field')
-    let title = this.title
+    const setTitle = () => {
+      const titleField = this.popover.querySelector('#captured_title_field')
+      let title
+      if (titleField.value === undefined) {
+        title = this.title
 
-    if (!title || (title && title.trim() === '')) {
-      title = this.pageContext.titleOverride ? this.pageContext.titleOverride : document.title
-      title = title.slice(0, 300)
-    }
-    if (title.trim() !== '') {
-      titleField.value = title.trim()
-    } else {
-      titleField.value = this.pageUrl
+        if (!title || (title && title.trim() === '')) {
+          title = this.pageContext.titleOverride ? this.pageContext.titleOverride : document.title
+          title = title.slice(0, 300)
+        }
+        if (title.trim() !== '') {
+          titleField.value = title.trim()
+        } else {
+          titleField.value = this.pageUrl
+        }
+
+        this.title = title
+      }
+      return title
     }
 
-    this.title = title
+    const title = setTitle()
+
     if (this.customFields instanceof Object) {
-      this.popover.querySelector('#custom_fields_section').classList.remove('hidden')
-
       const divider = '<div class="divider"></div>'
 
       if (this.customFields.notes !== undefined) {
@@ -339,7 +362,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       if (this.customFields.page_title !== undefined && this.customFields.page_title === title) {
         delete this.customFields.page_title
       }
-      this.renderPreviews()
+      this.renderThumbnails()
       if (this.customFields.url !== undefined) {
         this.popover.querySelector('#save_btn').disabled = false
       }
@@ -384,11 +407,9 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     return false
   }
 
-  renderPreviews () {
+  renderThumbnails () {
     const previewWrapper = this.popover.querySelector('#thumbnails')
-    while (previewWrapper.firstElementChild) {
-      previewWrapper.firstElementChild.remove()
-    }
+    if (previewWrapper.firstElementChild) return
     if (this.images.length < 1) {
       this.disable()
       this.noImages()
@@ -399,11 +420,10 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       const src = this.findImageSrc(image.el)
       if (src) {
         previewWrapper.insertAdjacentHTML('beforeend', `
-          <input type="radio" form="save_tab" id="image_${index}" name="url" value="${index}">
+          <input type="radio" form="dhd-save-form" id="image_${index}" name="url" value="${index}">
           <label for="image_${index}"><img src="${src}" alt="" class="thumbnail"></label>
         `)
       }
     })
-    this.popover.querySelector('input[type=radio]').checked = true
   }
 }

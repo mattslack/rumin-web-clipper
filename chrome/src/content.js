@@ -222,8 +222,6 @@
 
   const openModal = (pageContext) => {
     const popover = new DHDModal(pageContext)
-    popover.build()
-    popover.populate()
     return popover
   }
 
