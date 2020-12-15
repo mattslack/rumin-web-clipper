@@ -7,7 +7,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     delete customFields.images
 
     this.apiHost = 'https://api.dreamhousedesign.com'
-    this.apiHost = 'http://localhost:4000'
     this.customFields = customFields
     this.pageUrl = pageContext.urlOverride ? pageContext.urlOverride : window.location.href
     this.token = pageContext.token
