@@ -27,7 +27,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       notes = ''
     }
 
-    const selectedImage = document.querySelector('input[name=url]:checked')
+    const selectedImage = this.selectedImage
     const url = selectedImage.labels[0].querySelector('img').getAttribute('src')
     const selectedImageFields = this.images[selectedImage.value]
     delete selectedImageFields.el
@@ -124,10 +124,15 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     }
 
     const onChange = (event) => {
-      let valid = false
+      let checked = null
       const elements = event.currentTarget.elements
-      valid = Array.from(elements).filter(element => element.getAttribute('name') === 'url').some(element => element.checked)
-      this.toggleSave(valid)
+      checked = Array.from(elements).filter(element => element.getAttribute('name') === 'url' && element.checked)
+      if (checked && checked.length > 0) {
+        checked = checked[0]
+        this.updateNotes(checked)
+        this.selectedImage = checked
+      }
+      this.toggleSave(checked !== null)
     }
 
     const saveTab = document.createElement('form')
@@ -471,6 +476,30 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     if (saveBtn) {
       saveBtn.disabled = !enabled
       saveBtn.innerHTML = msg || 'Add to Your Dream House Clipboard'
+    }
+  }
+
+  getImageNotes (index) {
+    if (this.images === undefined || this.images.length === 0) return ''
+    const imageFields = this.images[index]
+    if (imageFields && imageFields.notes) {
+      return imageFields.notes
+    }
+    return ''
+  }
+
+  updateNotes (newImage) {
+    const previousImage = this.selectedImage
+    const newNotes = this.getImageNotes(newImage.value)
+    const notesField = this.popover.querySelector('textarea#captured_note_field')
+    let previousNotes = ''
+
+    if (previousImage && previousImage.value) {
+      previousNotes = this.getImageNotes(previousImage.value)
+    }
+
+    if (notesField && (notesField.value.length === 0 || notesField.value === previousNotes)) {
+      notesField.value = newNotes
     }
   }
 }
