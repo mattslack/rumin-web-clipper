@@ -1,6 +1,6 @@
 {
   "name": "Dream House",
-  "version": "0.0.1.9",
+  "version": "0.0.2.5",
   "description": "",
   "permissions": ["activeTab", "storage"],
   "optional_permissions": [],
