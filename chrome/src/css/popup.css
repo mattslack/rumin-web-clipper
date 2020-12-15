@@ -324,6 +324,7 @@
 }
 #dhd-popover input + label > img {
   border: solid 2px transparent;
+  filter: brightness(0.65) saturate(1.1);
 }
 #dhd-popover input:checked + label > img {
   border-color: #fff;

@@ -424,7 +424,6 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const previewWrapper = this.popover.querySelector('#thumbnails')
     if (previewWrapper.firstElementChild) return
     if (this.images.length < 1) {
-      this.disable()
       this.noImages()
       return
     }

@@ -1,4 +1,4 @@
-/* global DHDModal, chrome */
+/* global DHDModal, Element, chrome */
 
 (function () {
   let dhdmodal
@@ -68,11 +68,12 @@
       image = image.el
       let notes = ''
       let title
+      let wrapper
+      const topics = [
+        { topic: 'Source URL', value: window.location.href }
+      ]
       // Home feed Images
       if (image.closest('.hz-hf-card')) {
-        const topics = [
-          { topic: 'Source URL', value: window.location.href }
-        ]
         title = image.closest('.hz-hf-card').querySelector('.hz-hf-card-details__title')
         if (title) {
           if (title.querySelector('a[href]')) topics.push({ topic: 'Houzz URL', value: title.querySelector('a').href })
@@ -85,6 +86,25 @@
           notes: notes,
           title: title,
           topics: topics
+        })
+      } else if (image.closest('.hz-space-card')) {
+        wrapper = image.closest('.hz-space-card')
+        notes = wrapper.querySelector('.hz-space-card-unify__photo-description')
+        notes = notes instanceof Element ? notes.textContent.trim() : ''
+        const link = wrapper.querySelector('a')
+        if (link) topics.push({ topic: 'Houzz URL', value: link.href })
+        const user = wrapper.querySelector('.hz-space-card__user-name a')
+        if (user) {
+          topics.push({ topic: 'Houzz User', value: user.textContent })
+          topics.push({ topic: 'Houzz User Page', value: user.href })
+        }
+        title = wrapper.querySelector('.hz-space-card__photo-title')
+        title = title instanceof Element ? title.textContent : ''
+        images.push({
+          el: image,
+          notes: notes,
+          topics: topics,
+          title: title
         })
       }
     })
