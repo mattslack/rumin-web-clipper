@@ -268,6 +268,8 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
             this.closeWithMessage('The content was successfully saved', 'success')
           } else if (response.status === 401) {
             this.onExpired()
+          } else if (response.status === 404) {
+            this.showMessage('We couldn’t save that image. This site might prevent scraping.', 'error')
           } else {
             this.showMessage(`Looks there was a problem saving. <a class="btn btn--text" href="mailto:dreamhouse@collectiveidea.com?subject=bug%20report&body=data:%20${encodeURIComponent(JSON.stringify(data))}\nresponse:%20${encodeURIComponent(JSON.stringify(response))}">Send a bug report</a>.`, 'error')
             this.toggleSave(true)
