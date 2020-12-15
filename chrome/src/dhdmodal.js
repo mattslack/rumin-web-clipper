@@ -71,11 +71,13 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
           <h1 id="dhd-branding">
             <img src="${logo}" alt="Dream House Design" id="dhd-logo">
           </h1>
-          <button id="dhd-sign-out" type="button">
+          <button id="dhd-sign-out" type="button" style="display: none;">
             Sign Out
           </button>
-          <button id="dhd-close" type="button">
-            Close
+          <button class="dhd-close-button" id="dhd-close" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32">
+              <path fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="4" d="M5,5 L27,27 M27,5 L5,27" />
+            </svg>
           </button>
         </div>
       </div>
@@ -450,7 +452,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       if (container.firstElementChild && container.firstElementChild.classList.contains('dhd-message')) container.firstElementChild.remove()
       container.insertAdjacentHTML('afterbegin', `
         <div class="dhd-message dhd-message--${level}">
-          <button type="button" id="dhd-close-message">
+          <button class="dhd-close-button" type="button" id="dhd-close-message">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32">
               <path fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="4" d="M5,5 L27,27 M27,5 L5,27" />
             </svg>
