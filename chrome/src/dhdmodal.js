@@ -358,7 +358,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
       name: 'url',
       value: `${index}`
     }
-    new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
       imgEl.addEventListener('load', (event) => resolve(event.currentTarget))
       imgEl.setAttribute('alt', '')
       imgEl.setAttribute('class', 'thumbnail')
@@ -379,6 +379,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
         }
       }).catch(() => {
       })
+    return promise
   }
 
   populate () {
@@ -460,8 +461,16 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     return false
   }
 
+  noImages (previewWrapper) {
+    const header = document.querySelector('#dhd-thumbnails-header p')
+    if (header) {
+      header.textContent = 'Sorry, we coultn’t find any images on this page that can be saved.'
+    }
+  }
+
   renderThumbnails () {
     const previewWrapper = this.popover.querySelector('#thumbnails')
+    const filteredImages = []
     if (previewWrapper.firstElementChild) return
     if (this.images.length < 1) {
       this.noImages()
@@ -471,9 +480,14 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.images.forEach((image, index) => {
       const src = this.findImageSrc(image.el)
       if (src) {
-        this.filterAndAppendImage(src, index, previewWrapper)
+        filteredImages.push(this.filterAndAppendImage(src, index, previewWrapper))
       }
     })
+    Promise.allSettled(filteredImages)
+      .then(results => {
+        if (previewWrapper.querySelectorAll('img.thumbnail').length) return
+        this.noImages()
+      })
   }
 
   closeWithMessage (msg, level) {
