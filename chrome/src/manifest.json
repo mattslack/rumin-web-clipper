@@ -1,6 +1,6 @@
 {
   "name": "Matrix Clipper",
-  "version": "0.0.2.6",
+  "version": "0.0.2.7",
   "description": "",
   "permissions": ["activeTab", "storage"],
   "optional_permissions": [],
