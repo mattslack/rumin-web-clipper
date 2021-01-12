@@ -1,4 +1,4 @@
-/* global Event, FormData, chrome, fetch  */
+/* global Event, FormData, Image, chrome, fetch  */
 class DHDModal { /* eslint-disable-line no-unused-vars */
   constructor (pageContext) {
     const customFields = pageContext.customFields
@@ -348,6 +348,39 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     })
   }
 
+  filterAndAppendImage (src, index, previewWrapper) {
+    const imgEl = new Image()
+    console.log(src)
+    const labelAttributes = {
+      type: 'radio',
+      form: 'dhd-save-form',
+      id: `image_${index}`,
+      name: 'url',
+      value: `${index}`
+    }
+    new Promise((resolve, reject) => {
+      imgEl.addEventListener('load', (event) => resolve(event.currentTarget))
+      imgEl.setAttribute('alt', '')
+      imgEl.setAttribute('class', 'thumbnail')
+      imgEl.setAttribute('src', src)
+      if (imgEl.complete) resolve(imgEl)
+    })
+      .then((imagEl) => {
+        if (imgEl.naturalHeight >= 300 && imgEl.naturalWidth >= 300) {
+          const labelEl = document.createElement('label')
+          Object.keys(labelAttributes).forEach(key => {
+            labelEl.setAttribute(key, labelAttributes[key])
+          })
+          labelEl.appendChild(imgEl)
+          previewWrapper.insertAdjacentHTML('beforeend', `
+            <input type="radio" form="dhd-save-form" id="image_${index}" name="url" value="${index}">
+          `)
+          previewWrapper.appendChild(labelEl)
+        }
+      }).catch(() => {
+      })
+  }
+
   populate () {
     const setTitle = () => {
       const titleField = this.popover.querySelector('#captured_title_field')
@@ -438,10 +471,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     this.images.forEach((image, index) => {
       const src = this.findImageSrc(image.el)
       if (src) {
-        previewWrapper.insertAdjacentHTML('beforeend', `
-          <input type="radio" form="dhd-save-form" id="image_${index}" name="url" value="${index}">
-          <label for="image_${index}"><img src="${src}" alt="" class="thumbnail"></label>
-        `)
+        this.filterAndAppendImage(src, index, previewWrapper)
       }
     })
   }
