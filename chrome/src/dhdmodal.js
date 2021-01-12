@@ -354,7 +354,7 @@ class DHDModal { /* eslint-disable-line no-unused-vars */
     const labelAttributes = {
       type: 'radio',
       form: 'dhd-save-form',
-      id: `image_${index}`,
+      for: `image_${index}`,
       name: 'url',
       value: `${index}`
     }
